@@ -2,7 +2,733 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, <!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>君宥工程會計系統</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#ffffff;--bg2:#f7f7f5;--bg3:#f0efe9;--border:#e5e4de;--border2:#d0cfc8;--text:#1a1a18;--text2:#6b6b66;--text3:#9b9b94;--blue:#185FA5;--green:#0F6E56;--red:#993C1D;--purple:#534AB7;--radius:10px;--radius-sm:6px}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg3);color:var(--text);min-height:100vh}
+.app{max-width:860px;margin:0 auto;padding:1rem}
+.header{padding:.75rem 0 1.25rem;border-bottom:0.5px solid var(--border);margin-bottom:1.25rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+.header h1{font-size:18px;font-weight:600;display:flex;align-items:center;gap:8px}
+.header-right{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.header-date{font-size:12px;color:var(--text3)}
+.sync-status{font-size:12px;padding:3px 10px;border-radius:12px;border:0.5px solid var(--border)}
+.sync-ok{background:#EAF3DE;color:#27500A;border-color:#C0DD97}
+.sync-err{background:#FCEBEB;color:#791F1F;border-color:#F7C1C1}
+.sync-loading{background:#E6F1FB;color:#0C447C;border-color:#B5D4F4}
+.nav{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:1.25rem}
+.nav-btn{padding:6px 13px;font-size:13px;border:0.5px solid var(--border);border-radius:20px;background:var(--bg);color:var(--text2);cursor:pointer;transition:all .15s;white-space:nowrap}
+.nav-btn.active{border-color:var(--border2);color:var(--text);font-weight:500}
+.nav-btn:hover:not(.active){background:var(--bg2)}
+.section{display:none}.section.active{display:block}
+.card{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius);padding:1.25rem;margin-bottom:1rem}
+.card-title{font-size:14px;font-weight:500;margin-bottom:1rem;display:flex;align-items:center;gap:6px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:11px}
+.form-row.full{grid-template-columns:1fr}
+.form-row.three{grid-template-columns:1fr 1fr 1fr}
+.form-group label{font-size:12px;color:var(--text2);display:block;margin-bottom:4px}
+.form-group input,.form-group select,.form-group textarea{width:100%;padding:8px 10px;font-size:14px;border:0.5px solid var(--border);border-radius:var(--radius-sm);background:var(--bg);color:var(--text);outline:none;transition:border .15s}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--border2)}
+.form-group textarea{height:68px;resize:vertical}
+.info-box{background:var(--bg2);border-radius:var(--radius-sm);padding:10px 12px;font-size:12px;color:var(--text2);margin-bottom:12px;border-left:2px solid var(--purple)}
+.info-box strong{color:var(--text)}
+.btn{padding:9px 16px;font-size:14px;font-weight:500;border:0.5px solid var(--border2);border-radius:var(--radius-sm);background:var(--bg);color:var(--text);cursor:pointer;transition:all .15s;width:100%}
+.btn:hover{background:var(--bg2)}
+.btn:active{transform:scale(.99)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn-excel{background:#EAF3DE;border-color:#C0DD97;color:#27500A;width:auto;padding:8px 16px;font-size:13px}
+.btn-excel:hover{background:#d8edc7}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead th{text-align:left;padding:7px 8px;font-weight:500;font-size:12px;color:var(--text2);border-bottom:0.5px solid var(--border)}
+tbody td{padding:8px;border-bottom:0.5px solid var(--border);color:var(--text);vertical-align:middle}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover{background:var(--bg2)}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:500}
+.b-invoice{background:#EEEDFE;color:#3C3489}.b-noinvoice{background:#F1EFE8;color:#5F5E5A}
+.b-check{background:#E1F5EE;color:#085041}.b-transfer{background:#E6F1FB;color:#0C447C}
+.b-cash{background:#FAEEDA;color:#633806}.b-company{background:#EAF3DE;color:#27500A}
+.b-personal{background:#FAECE7;color:#712B13}.b-safe{background:#FBEAF0;color:#72243E}
+.b-paid{background:#E1F5EE;color:#085041}.b-unpaid{background:#FCEBEB;color:#791F1F}
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:9px;margin-bottom:1.25rem}
+.metric{background:var(--bg2);border-radius:var(--radius-sm);padding:.9rem}
+.metric-label{font-size:12px;color:var(--text2);margin-bottom:3px}
+.metric-value{font-size:21px;font-weight:600;color:var(--text)}
+.metric-sub{font-size:11px;color:var(--text3);margin-top:2px}
+.flow-box{background:var(--bg2);border-radius:var(--radius-sm);padding:10px 12px;margin-top:8px;font-size:13px}
+.flow-title{font-weight:500;font-size:13px;margin-bottom:6px}
+.salary-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:0.5px solid var(--border)}
+.salary-row:last-child{border-bottom:none}
+.salary-name{font-size:14px;font-weight:500}.salary-note{font-size:11px;color:var(--text3);margin-top:2px}
+.salary-amt{font-size:15px;font-weight:600;color:var(--blue)}
+.fixed-row{display:grid;grid-template-columns:1fr auto;gap:12px;padding:11px 0;border-bottom:0.5px solid var(--border);align-items:start}
+.fixed-row:last-child{border-bottom:none}
+.fixed-name{font-size:14px;font-weight:500}.fixed-note{font-size:12px;color:var(--text3);margin-top:3px}
+.fixed-amt{font-size:15px;font-weight:600;text-align:right;color:var(--blue)}.fixed-due{font-size:11px;color:var(--text3);text-align:right;margin-top:2px}
+.xl-row{display:flex;justify-content:space-between;padding:7px 0;font-size:13px;border-bottom:0.5px solid var(--border)}
+.xl-row:last-child{border-bottom:none}
+.xl-total{display:flex;justify-content:space-between;padding-top:10px;font-size:15px;font-weight:600}
+.report-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:1.25rem}
+.report-item{display:flex;justify-content:space-between;padding:8px 0;font-size:14px;border-bottom:0.5px solid var(--border)}
+.report-item:last-child{border-bottom:none}
+.report-total{display:flex;justify-content:space-between;padding:11px 0 0;font-size:15px;font-weight:600;border-top:1px solid var(--border2);margin-top:6px}
+.section-title{font-size:12px;font-weight:500;color:var(--text2);letter-spacing:.4px;text-transform:uppercase;margin-bottom:8px}
+.income{color:var(--green)}.expense{color:var(--red)}
+.del-btn{background:none;border:none;cursor:pointer;color:var(--text3);font-size:16px;padding:2px 6px;line-height:1}
+.del-btn:hover{color:#E24B4A}
+.divider{height:.5px;background:var(--border);margin:1rem 0}
+.empty{text-align:center;padding:2rem;color:var(--text3);font-size:13px}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#2C2C2A;color:#F1EFE8;padding:10px 22px;border-radius:20px;font-size:13px;opacity:0;transition:opacity .3s;pointer-events:none;z-index:999;white-space:nowrap}
+.toast.show{opacity:1}
+.loading-row{text-align:center;padding:1.5rem;color:var(--text3);font-size:13px}
+/* Excel export modal */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:100;align-items:center;justify-content:center}
+.modal-overlay.show{display:flex}
+.modal{background:var(--bg);border-radius:var(--radius);padding:1.5rem;width:90%;max-width:420px;box-shadow:0 8px 32px rgba(0,0,0,.15)}
+.modal-title{font-size:16px;font-weight:600;margin-bottom:.5rem}
+.modal-sub{font-size:13px;color:var(--text2);margin-bottom:1.25rem}
+.modal-options{display:grid;gap:8px;margin-bottom:1.25rem}
+.modal-opt{display:flex;align-items:center;gap:10px;padding:10px 12px;border:0.5px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;transition:all .15s}
+.modal-opt:hover{background:var(--bg2);border-color:var(--border2)}
+.modal-opt input[type=checkbox]{width:16px;height:16px;cursor:pointer}
+.modal-opt-text{font-size:14px}
+.modal-opt-sub{font-size:12px;color:var(--text3)}
+.modal-footer{display:flex;gap:8px;justify-content:flex-end}
+.btn-cancel{width:auto;padding:8px 18px;font-size:13px;color:var(--text2)}
+.btn-confirm{width:auto;padding:8px 18px;font-size:13px;background:#EAF3DE;border-color:#C0DD97;color:#27500A}
+.btn-confirm:hover{background:#d8edc7}
+@media(max-width:600px){
+  .form-row{grid-template-columns:1fr}.form-row.three{grid-template-columns:1fr 1fr}
+  .metrics{grid-template-columns:1fr 1fr}.report-metrics{grid-template-columns:1fr}
+  .nav-btn{padding:5px 10px;font-size:12px}table{font-size:12px}
+  thead th,tbody td{padding:6px 5px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <h1>🏗 君宥工程會計系統</h1>
+    <div class="header-right">
+      <span class="header-date" id="today-date"></span>
+      <span class="sync-status sync-loading" id="sync-status">連線中...</span>
+    </div>
+  </div>
+  <div class="nav">
+    <button class="nav-btn active" onclick="showSection('orders',this)">📋 客戶訂單</button>
+    <button class="nav-btn" onclick="showSection('workers',this)">🔧 工人費用</button>
+    <button class="nav-btn" onclick="showSection('materials',this)">📦 材料貨款</button>
+    <button class="nav-btn" onclick="showSection('salary',this)">👥 薪資發放</button>
+    <button class="nav-btn" onclick="showSection('fixed',this)">🏠 固定支出</button>
+    <button class="nav-btn" onclick="showSection('xiaoliu',this)">🤝 小劉月收</button>
+    <button class="nav-btn" onclick="showSection('report',this)">📊 月報表</button>
+  </div>
+
+  <!-- 客戶訂單 -->
+  <div id="section-orders" class="section active">
+    <div class="metrics">
+      <div class="metric"><div class="metric-label">本月訂單</div><div class="metric-value" id="m-orders">-</div><div class="metric-sub">筆</div></div>
+      <div class="metric"><div class="metric-label">有發票應收</div><div class="metric-value" id="m-invoice">-</div><div class="metric-sub">入君宥戶頭</div></div>
+      <div class="metric"><div class="metric-label">無發票應收</div><div class="metric-value" id="m-noinvoice">-</div><div class="metric-sub">入陳建隆/金庫</div></div>
+      <div class="metric"><div class="metric-label">未收款</div><div class="metric-value" id="m-unpaid">-</div><div class="metric-sub">筆待收</div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">➕ 新增訂單</div>
+      <div class="form-row">
+        <div class="form-group"><label>客戶名稱</label><input type="text" id="o-client" placeholder="客戶公司或姓名"></div>
+        <div class="form-group"><label>訂單日期</label><input type="date" id="o-date"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>金額（元）</label><input type="number" id="o-amount" placeholder="0"></div>
+        <div class="form-group"><label>開發票？</label>
+          <select id="o-invoice" onchange="updateFlow()">
+            <option value="yes">有開發票（含稅）</option>
+            <option value="no">不開發票（無稅）</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>付款方式</label>
+          <select id="o-payment" onchange="updateFlow()">
+            <option value="check">支票</option>
+            <option value="transfer">匯款</option>
+            <option value="cash">現金</option>
+          </select>
+        </div>
+        <div class="form-group"><label>收款狀態</label>
+          <select id="o-status">
+            <option value="unpaid">未收款</option>
+            <option value="paid">已收款</option>
+          </select>
+        </div>
+      </div>
+      <div class="flow-box"><div class="flow-title">入帳方向</div><div id="flow-detail">－</div></div>
+      <div class="form-row full" style="margin-top:10px">
+        <div class="form-group"><label>備註</label><textarea id="o-note" placeholder="工程項目、票號等..."></textarea></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn" style="flex:1" id="btn-order" onclick="addOrder()">✓ 儲存訂單</button>
+        <button class="btn btn-excel" onclick="exportExcel('orders')">📥 匯出 Excel</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">📋 訂單紀錄</div>
+      <div id="orders-list"><div class="loading-row">載入中...</div></div>
+    </div>
+  </div>
+
+  <!-- 工人費用 -->
+  <div id="section-workers" class="section">
+    <div class="card">
+      <div class="card-title">➕ 登記工人安裝費</div>
+      <div class="form-row">
+        <div class="form-group"><label>工人姓名</label><input type="text" id="w-name" placeholder="工人姓名"></div>
+        <div class="form-group"><label>結算月份</label><input type="month" id="w-month"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>安裝費（元）</label><input type="number" id="w-amount" placeholder="0"></div>
+        <div class="form-group"><label>付款日期</label><input type="date" id="w-paydate"></div>
+      </div>
+      <div class="form-row full">
+        <div class="form-group"><label>工程說明</label><textarea id="w-note" placeholder="安裝項目、工地地點等..."></textarea></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn" style="flex:1" id="btn-worker" onclick="addWorker()">✓ 儲存紀錄</button>
+        <button class="btn btn-excel" onclick="exportExcel('workers')">📥 匯出 Excel</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">📋 工人費用紀錄</div>
+      <div id="workers-list"><div class="loading-row">載入中...</div></div>
+    </div>
+  </div>
+
+  <!-- 材料貨款 -->
+  <div id="section-materials" class="section">
+    <div class="info-box"><strong>永騏付款時程：</strong>月初收到上月帳單 → 每月 15 號前繳上上月貨款<br>例：6/15 前繳清 4 月份貨款</div>
+    <div class="card">
+      <div class="card-title">➕ 進貨登記</div>
+      <div class="form-row">
+        <div class="form-group"><label>進貨日期</label><input type="date" id="mat-date"></div>
+        <div class="form-group"><label>月份歸屬</label><input type="month" id="mat-month"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>金額（元）</label><input type="number" id="mat-amount" placeholder="0"></div>
+        <div class="form-group"><label>繳款狀態</label>
+          <select id="mat-status">
+            <option value="unpaid">未繳款</option>
+            <option value="paid">已繳款</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row full">
+        <div class="form-group"><label>備註</label><textarea id="mat-note" placeholder="材料品項說明..."></textarea></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn" style="flex:1" id="btn-material" onclick="addMaterial()">✓ 儲存紀錄</button>
+        <button class="btn btn-excel" onclick="exportExcel('materials')">📥 匯出 Excel</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">📋 材料紀錄</div>
+      <div id="materials-list"><div class="loading-row">載入中...</div></div>
+    </div>
+  </div>
+
+  <!-- 薪資 -->
+  <div id="section-salary" class="section">
+    <div class="info-box"><strong>發薪時間：</strong>每月月初發放。劉育瑋＆劉昱伶需從公司銀行領現金製造金流。</div>
+    <div class="card">
+      <div class="card-title">📊 固定薪資表</div>
+      <div class="salary-row"><div><div class="salary-name">陳建隆</div><div class="salary-note">入公司帳</div></div><div class="salary-amt">$73,554</div></div>
+      <div class="salary-row"><div><div class="salary-name">陳敏篁</div><div class="salary-note">入公司帳</div></div><div class="salary-amt">$20,000</div></div>
+      <div class="salary-row"><div><div class="salary-name">陳曉葳</div><div class="salary-note">入公司帳</div></div><div class="salary-amt">$20,000</div></div>
+      <div class="salary-row"><div><div class="salary-name">劉育瑋＋劉昱伶</div><div class="salary-note">公司銀行領現金（製造金流）</div></div><div class="salary-amt">$57,485</div></div>
+      <div class="report-total"><span>每月薪資總額</span><span style="color:var(--blue)">$171,039</span></div>
+    </div>
+    <div class="card">
+      <div class="card-title">✓ 登記薪資發放</div>
+      <div class="form-row">
+        <div class="form-group"><label>發放月份</label><input type="month" id="sal-month"></div>
+        <div class="form-group"><label>備註（如有調整）</label><input type="text" id="sal-note" placeholder="特殊說明..."></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn" style="flex:1" id="btn-salary" onclick="addSalary()">✓ 登記發放</button>
+        <button class="btn btn-excel" onclick="exportExcel('salary')">📥 匯出 Excel</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">📋 發放紀錄</div>
+      <div id="salary-list"><div class="loading-row">載入中...</div></div>
+    </div>
+  </div>
+
+  <!-- 固定支出 -->
+  <div id="section-fixed" class="section">
+    <div class="card">
+      <div class="card-title">📋 固定支出清單</div>
+      <div class="fixed-row"><div><div class="fixed-name">房租－林口文化北路</div><div class="fixed-note">每月10日現金交房東簽收</div></div><div><div class="fixed-amt">$30,000</div><div class="fixed-due">每月10日</div></div></div>
+      <div class="fixed-row"><div><div class="fixed-name">房租－龜山樂善三路</div><div class="fixed-note">年繳，每年10月會計師確認續租</div></div><div><div class="fixed-amt">$36,000</div><div class="fixed-due">年繳</div></div></div>
+      <div class="fixed-row"><div><div class="fixed-name">零用金補充</div><div class="fixed-note">陳建隆 $5,000 ＋ 劉育瑋 $5,000（不足時補充）</div></div><div><div class="fixed-amt">$10,000</div><div class="fixed-due">不定時</div></div></div>
+      <div class="fixed-row"><div><div class="fixed-name">勞保＋健保＋勞退</div><div class="fixed-note">月底前繳前月費用，入離職當天加退保</div></div><div><div class="fixed-amt">依月計算</div><div class="fixed-due">月底前</div></div></div>
+      <div class="fixed-row"><div><div class="fixed-name">影印機費</div><div class="fixed-note"></div></div><div><div class="fixed-amt">依約定</div><div class="fixed-due">定期</div></div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">➕ 登記付款</div>
+      <div class="form-row">
+        <div class="form-group"><label>項目</label>
+          <select id="fx-type">
+            <option value="rent_linkou">房租－林口</option>
+            <option value="rent_guishan">房租－龜山（年繳）</option>
+            <option value="petty_chen">零用金－陳建隆</option>
+            <option value="petty_liu">零用金－劉育瑋</option>
+            <option value="insurance">勞健保勞退</option>
+            <option value="printer">影印機費</option>
+            <option value="other">其他</option>
+          </select>
+        </div>
+        <div class="form-group"><label>日期</label><input type="date" id="fx-date"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>金額（元）</label><input type="number" id="fx-amount" placeholder="0"></div>
+        <div class="form-group"><label>備註</label><input type="text" id="fx-note" placeholder=""></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn" style="flex:1" id="btn-fixed" onclick="addFixed()">✓ 儲存紀錄</button>
+        <button class="btn btn-excel" onclick="exportExcel('fixed')">📥 匯出 Excel</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">📋 付款紀錄</div>
+      <div id="fixed-list"><div class="loading-row">載入中...</div></div>
+    </div>
+  </div>
+
+  <!-- 小劉 -->
+  <div id="section-xiaoliu" class="section">
+    <div class="card">
+      <div class="card-title">💰 每月固定收款明細</div>
+      <div class="xl-row"><span>顧問費</span><span style="font-weight:500">$20,000</span></div>
+      <div class="xl-row"><span>零用金</span><span style="font-weight:500">$5,000</span></div>
+      <div class="xl-row"><span>勞保＋健保＋勞退</span><span style="font-weight:500">$18,326</span></div>
+      <div class="xl-row"><span>房租分擔</span><span style="font-weight:500">$15,000</span></div>
+      <div class="xl-total"><span>每月合計</span><span style="color:var(--blue)">$58,326</span></div>
+    </div>
+    <div class="card">
+      <div class="card-title">➕ 登記收款</div>
+      <div class="form-row">
+        <div class="form-group"><label>收款月份</label><input type="month" id="xl-month"></div>
+        <div class="form-group"><label>實收金額（元）</label><input type="number" id="xl-amount" value="58326"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>收款日期</label><input type="date" id="xl-date"></div>
+        <div class="form-group"><label>備註</label><input type="text" id="xl-note" placeholder="差額說明等..."></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn" style="flex:1" id="btn-xiaoliu" onclick="addXiaoliu()">✓ 儲存收款</button>
+        <button class="btn btn-excel" onclick="exportExcel('xiaoliu')">📥 匯出 Excel</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">📋 收款紀錄</div>
+      <div id="xiaoliu-list"><div class="loading-row">載入中...</div></div>
+    </div>
+  </div>
+
+  <!-- 月報表 -->
+  <div id="section-report" class="section">
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:1.25rem;flex-wrap:wrap">
+        <label style="font-size:13px;color:var(--text2)">報表月份</label>
+        <select id="report-month-sel" onchange="renderReport()" style="width:auto;padding:6px 10px;font-size:13px;border:0.5px solid var(--border);border-radius:var(--radius-sm);background:var(--bg);color:var(--text)"></select>
+        <button class="btn btn-excel" onclick="showExportModal()">📥 匯出 Excel 報表</button>
+      </div>
+      <div id="report-content"><div class="loading-row">載入中...</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- Excel 匯出 Modal -->
+<div class="modal-overlay" id="export-modal" onclick="closeModalOutside(event)">
+  <div class="modal">
+    <div class="modal-title">📥 匯出 Excel 報表</div>
+    <div class="modal-sub" id="export-modal-sub">選擇要匯出的工作表：</div>
+    <div class="modal-options" id="export-options">
+      <label class="modal-opt"><input type="checkbox" value="orders" checked><div><div class="modal-opt-text">客戶訂單</div><div class="modal-opt-sub">所有訂單紀錄</div></div></label>
+      <label class="modal-opt"><input type="checkbox" value="workers" checked><div><div class="modal-opt-text">工人費用</div><div class="modal-opt-sub">安裝費紀錄</div></div></label>
+      <label class="modal-opt"><input type="checkbox" value="materials" checked><div><div class="modal-opt-text">材料貨款</div><div class="modal-opt-sub">永騏進貨紀錄</div></div></label>
+      <label class="modal-opt"><input type="checkbox" value="salary" checked><div><div class="modal-opt-text">薪資發放</div><div class="modal-opt-sub">每月薪資紀錄</div></div></label>
+      <label class="modal-opt"><input type="checkbox" value="fixed" checked><div><div class="modal-opt-text">固定支出</div><div class="modal-opt-sub">房租、零用金等</div></div></label>
+      <label class="modal-opt"><input type="checkbox" value="xiaoliu" checked><div><div class="modal-opt-text">小劉月收</div><div class="modal-opt-sub">每月收款紀錄</div></div></label>
+      <label class="modal-opt"><input type="checkbox" value="summary" checked><div><div class="modal-opt-text">月收支摘要</div><div class="modal-opt-sub">各月份收支總覽</div></div></label>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-cancel" onclick="closeModal()">取消</button>
+      <button class="btn btn-confirm" id="btn-export-confirm" onclick="doExportExcel()">📥 下載 Excel</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SUPABASE_URL='https://uqfkvvhnedjkpijubtfu.supabase.co';
+const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVxZmt2dmhuZWRqa3BpanVidGZ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNTc3MzgsImV4cCI6MjA5NjczMzczOH0.H79Ra0XPUzn8BE3r3GHxVvoLT296lIWxsQwLjv21CZ8';
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+
+const today=new Date();
+document.getElementById('today-date').textContent=today.getFullYear()+'年'+(today.getMonth()+1)+'月'+today.getDate()+'日';
+const curM=today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0');
+
+function setDefaults(){
+  const td=today.toISOString().split('T')[0],tm=td.substring(0,7);
+  ['o-date','w-paydate','mat-date','fx-date','xl-date'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=td});
+  ['w-month','mat-month','sal-month','xl-month'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=tm});
+}
+setDefaults();
+
+function setSyncStatus(s){
+  const el=document.getElementById('sync-status');
+  if(s==='ok'){el.textContent='☁ 已同步';el.className='sync-status sync-ok'}
+  else if(s==='err'){el.textContent='✗ 連線失敗';el.className='sync-status sync-err'}
+  else{el.textContent='↻ 同步中...';el.className='sync-status sync-loading'}
+}
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200)}
+function fmt(n){return'$'+Math.round(n||0).toLocaleString()}
+function fmtDate(d){return d||'-'}
+function showSection(id,btn){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('section-'+id).classList.add('active');
+  btn.classList.add('active');
+  if(id==='report')renderReport();
+}
+function updateFlow(){
+  const inv=document.getElementById('o-invoice').value,pay=document.getElementById('o-payment').value;
+  const pb=pay==='check'?'<span class="badge b-check">支票</span>':pay==='transfer'?'<span class="badge b-transfer">匯款</span>':'<span class="badge b-cash">現金</span>';
+  let html='';
+  if(inv==='yes'){html=pb+(pay==='transfer'?' → <span class="badge b-company">公司銀行（核對手續費）</span>':' → <span class="badge b-company">存入公司戶</span>')}
+  else{html=pb+(pay==='cash'?' → <span class="badge b-safe">存入金庫</span>':pay==='transfer'?' → <span class="badge b-personal">陳建隆戶（核對手續費）</span>':' → <span class="badge b-personal">存入陳建隆戶</span>')}
+  document.getElementById('flow-detail').innerHTML=html;
+}
+updateFlow();
+
+// CRUD helpers
+async function loadOrders(){
+  setSyncStatus('loading');
+  const {data,error}=await sb.from('orders').select('*').order('id',{ascending:false});
+  if(error){setSyncStatus('err');document.getElementById('orders-list').innerHTML='<div class="empty">載入失敗</div>';return}
+  setSyncStatus('ok');
+  const cur=data.filter(o=>(o.date||'').startsWith(curM));
+  document.getElementById('m-orders').textContent=cur.length;
+  document.getElementById('m-invoice').textContent=fmt(cur.filter(o=>o.invoice==='yes').reduce((a,b)=>a+(b.amount||0),0));
+  document.getElementById('m-noinvoice').textContent=fmt(cur.filter(o=>o.invoice==='no').reduce((a,b)=>a+(b.amount||0),0));
+  document.getElementById('m-unpaid').textContent=data.filter(o=>o.status==='unpaid').length;
+  const el=document.getElementById('orders-list');
+  if(!data.length){el.innerHTML='<div class="empty">尚無訂單紀錄</div>';return}
+  el.innerHTML='<table><thead><tr><th>日期</th><th>客戶</th><th>金額</th><th>發票</th><th>付款</th><th>狀態</th><th></th></tr></thead><tbody>'+
+  data.map(o=>`<tr><td>${fmtDate(o.date)}</td><td>${o.client}</td><td>${fmt(o.amount)}</td>
+  <td>${o.invoice==='yes'?'<span class="badge b-invoice">有</span>':'<span class="badge b-noinvoice">無</span>'}</td>
+  <td>${o.payment==='check'?'<span class="badge b-check">支票</span>':o.payment==='transfer'?'<span class="badge b-transfer">匯款</span>':'<span class="badge b-cash">現金</span>'}</td>
+  <td>${o.status==='paid'?'<span class="badge b-paid">已收</span>':'<span class="badge b-unpaid">未收</span>'}</td>
+  <td><button class="del-btn" onclick="delOrder(${o.id})">🗑</button></td></tr>`).join('')+'</tbody></table>';
+}
+async function addOrder(){
+  const client=document.getElementById('o-client').value.trim(),amount=parseFloat(document.getElementById('o-amount').value)||0;
+  if(!client||!amount){toast('請填寫客戶名稱與金額');return}
+  const btn=document.getElementById('btn-order');btn.disabled=true;btn.textContent='儲存中...';
+  const {error}=await sb.from('orders').insert({client,date:document.getElementById('o-date').value,amount,invoice:document.getElementById('o-invoice').value,payment:document.getElementById('o-payment').value,status:document.getElementById('o-status').value,note:document.getElementById('o-note').value});
+  btn.disabled=false;btn.textContent='✓ 儲存訂單';
+  if(error){toast('❌ 儲存失敗：'+error.message);return}
+  toast('✓ 訂單已儲存');document.getElementById('o-client').value='';document.getElementById('o-amount').value='';document.getElementById('o-note').value='';loadOrders();
+}
+async function delOrder(id){if(!confirm('確定刪除？'))return;await sb.from('orders').delete().eq('id',id);loadOrders();toast('已刪除')}
+
+async function loadWorkers(){
+  const {data,error}=await sb.from('workers').select('*').order('id',{ascending:false});
+  const el=document.getElementById('workers-list');
+  if(error||!data.length){el.innerHTML='<div class="empty">'+(error?'載入失敗':'尚無工人費用紀錄')+'</div>';return}
+  el.innerHTML='<table><thead><tr><th>結算月</th><th>工人</th><th>安裝費</th><th>付款日</th><th>備註</th><th></th></tr></thead><tbody>'+
+  data.map(w=>`<tr><td>${w.month}</td><td>${w.name}</td><td>${fmt(w.amount)}</td><td>${fmtDate(w.paydate)}</td><td style="color:var(--text3);font-size:12px">${w.note||'-'}</td><td><button class="del-btn" onclick="delWorker(${w.id})">🗑</button></td></tr>`).join('')+'</tbody></table>';
+}
+async function addWorker(){
+  const name=document.getElementById('w-name').value.trim(),amount=parseFloat(document.getElementById('w-amount').value)||0;
+  if(!name||!amount){toast('請填寫工人姓名與金額');return}
+  const btn=document.getElementById('btn-worker');btn.disabled=true;btn.textContent='儲存中...';
+  const {error}=await sb.from('workers').insert({name,month:document.getElementById('w-month').value,amount,paydate:document.getElementById('w-paydate').value,note:document.getElementById('w-note').value});
+  btn.disabled=false;btn.textContent='✓ 儲存紀錄';
+  if(error){toast('❌ 儲存失敗');return}
+  toast('✓ 工人費用已儲存');document.getElementById('w-name').value='';document.getElementById('w-amount').value='';document.getElementById('w-note').value='';loadWorkers();
+}
+async function delWorker(id){if(!confirm('確定刪除？'))return;await sb.from('workers').delete().eq('id',id);loadWorkers();toast('已刪除')}
+
+async function loadMaterials(){
+  const {data,error}=await sb.from('materials').select('*').order('id',{ascending:false});
+  const el=document.getElementById('materials-list');
+  if(error||!data.length){el.innerHTML='<div class="empty">'+(error?'載入失敗':'尚無材料紀錄')+'</div>';return}
+  el.innerHTML='<table><thead><tr><th>進貨日</th><th>月份</th><th>金額</th><th>繳款</th><th>備註</th><th></th></tr></thead><tbody>'+
+  data.map(m=>`<tr><td>${fmtDate(m.date)}</td><td>${m.month}</td><td>${fmt(m.amount)}</td><td>${m.status==='paid'?'<span class="badge b-paid">已繳</span>':'<span class="badge b-unpaid">未繳</span>'}</td><td style="color:var(--text3);font-size:12px">${m.note||'-'}</td><td><button class="del-btn" onclick="delMaterial(${m.id})">🗑</button></td></tr>`).join('')+'</tbody></table>';
+}
+async function addMaterial(){
+  const amount=parseFloat(document.getElementById('mat-amount').value)||0;
+  if(!amount){toast('請填寫金額');return}
+  const btn=document.getElementById('btn-material');btn.disabled=true;btn.textContent='儲存中...';
+  const {error}=await sb.from('materials').insert({date:document.getElementById('mat-date').value,month:document.getElementById('mat-month').value,amount,status:document.getElementById('mat-status').value,note:document.getElementById('mat-note').value});
+  btn.disabled=false;btn.textContent='✓ 儲存紀錄';
+  if(error){toast('❌ 儲存失敗');return}
+  toast('✓ 材料紀錄已儲存');document.getElementById('mat-amount').value='';document.getElementById('mat-note').value='';loadMaterials();
+}
+async function delMaterial(id){if(!confirm('確定刪除？'))return;await sb.from('materials').delete().eq('id',id);loadMaterials();toast('已刪除')}
+
+async function loadSalary(){
+  const {data,error}=await sb.from('salary').select('*').order('id',{ascending:false});
+  const el=document.getElementById('salary-list');
+  if(error||!data.length){el.innerHTML='<div class="empty">'+(error?'載入失敗':'尚無薪資發放紀錄')+'</div>';return}
+  el.innerHTML='<table><thead><tr><th>發放月份</th><th>總金額</th><th>備註</th><th></th></tr></thead><tbody>'+
+  data.map(s=>`<tr><td>${s.month}</td><td>${fmt(s.total)}</td><td style="color:var(--text3);font-size:12px">${s.note||'-'}</td><td><button class="del-btn" onclick="delSalary(${s.id})">🗑</button></td></tr>`).join('')+'</tbody></table>';
+}
+async function addSalary(){
+  const month=document.getElementById('sal-month').value;
+  if(!month){toast('請選擇月份');return}
+  const btn=document.getElementById('btn-salary');btn.disabled=true;btn.textContent='儲存中...';
+  const {error}=await sb.from('salary').insert({month,total:171039,note:document.getElementById('sal-note').value});
+  btn.disabled=false;btn.textContent='✓ 登記發放';
+  if(error){toast('❌ 儲存失敗（此月份可能已登記）');return}
+  toast('✓ 薪資發放已登記');document.getElementById('sal-note').value='';loadSalary();
+}
+async function delSalary(id){if(!confirm('確定刪除？'))return;await sb.from('salary').delete().eq('id',id);loadSalary();toast('已刪除')}
+
+const fxNames={rent_linkou:'房租－林口',rent_guishan:'房租－龜山（年繳）',petty_chen:'零用金－陳建隆',petty_liu:'零用金－劉育瑋',insurance:'勞健保勞退',printer:'影印機費',other:'其他'};
+async function loadFixed(){
+  const {data,error}=await sb.from('fixed_expenses').select('*').order('id',{ascending:false});
+  const el=document.getElementById('fixed-list');
+  if(error||!data.length){el.innerHTML='<div class="empty">'+(error?'載入失敗':'尚無固定支出紀錄')+'</div>';return}
+  el.innerHTML='<table><thead><tr><th>日期</th><th>項目</th><th>金額</th><th>備註</th><th></th></tr></thead><tbody>'+
+  data.map(f=>`<tr><td>${fmtDate(f.date)}</td><td>${fxNames[f.type]||f.type}</td><td>${fmt(f.amount)}</td><td style="color:var(--text3);font-size:12px">${f.note||'-'}</td><td><button class="del-btn" onclick="delFixed(${f.id})">🗑</button></td></tr>`).join('')+'</tbody></table>';
+}
+async function addFixed(){
+  const amount=parseFloat(document.getElementById('fx-amount').value)||0;
+  if(!amount){toast('請填寫金額');return}
+  const btn=document.getElementById('btn-fixed');btn.disabled=true;btn.textContent='儲存中...';
+  const {error}=await sb.from('fixed_expenses').insert({type:document.getElementById('fx-type').value,date:document.getElementById('fx-date').value,amount,note:document.getElementById('fx-note').value});
+  btn.disabled=false;btn.textContent='✓ 儲存紀錄';
+  if(error){toast('❌ 儲存失敗');return}
+  toast('✓ 固定支出已儲存');document.getElementById('fx-amount').value='';document.getElementById('fx-note').value='';loadFixed();
+}
+async function delFixed(id){if(!confirm('確定刪除？'))return;await sb.from('fixed_expenses').delete().eq('id',id);loadFixed();toast('已刪除')}
+
+async function loadXiaoliu(){
+  const {data,error}=await sb.from('xiaoliu').select('*').order('id',{ascending:false});
+  const el=document.getElementById('xiaoliu-list');
+  if(error||!data.length){el.innerHTML='<div class="empty">'+(error?'載入失敗':'尚無收款紀錄')+'</div>';return}
+  el.innerHTML='<table><thead><tr><th>月份</th><th>收款日</th><th>金額</th><th>備註</th><th></th></tr></thead><tbody>'+
+  data.map(x=>`<tr><td>${x.month}</td><td>${fmtDate(x.date)}</td><td>${fmt(x.amount)}</td><td style="color:var(--text3);font-size:12px">${x.note||'-'}</td><td><button class="del-btn" onclick="delXiaoliu(${x.id})">🗑</button></td></tr>`).join('')+'</tbody></table>';
+}
+async function addXiaoliu(){
+  const month=document.getElementById('xl-month').value,amount=parseFloat(document.getElementById('xl-amount').value)||0;
+  if(!month||!amount){toast('請填寫月份與金額');return}
+  const btn=document.getElementById('btn-xiaoliu');btn.disabled=true;btn.textContent='儲存中...';
+  const {error}=await sb.from('xiaoliu').insert({month,date:document.getElementById('xl-date').value,amount,note:document.getElementById('xl-note').value});
+  btn.disabled=false;btn.textContent='✓ 儲存收款';
+  if(error){toast('❌ 儲存失敗');return}
+  toast('✓ 小劉收款已儲存');document.getElementById('xl-note').value='';loadXiaoliu();
+}
+async function delXiaoliu(id){if(!confirm('確定刪除？'))return;await sb.from('xiaoliu').delete().eq('id',id);loadXiaoliu();toast('已刪除')}
+
+// ── REPORT ──
+let allData={orders:[],workers:[],materials:[],salary:[],fixed:[],xiaoliu:[]};
+async function fetchAllData(){
+  const [o,w,m,s,f,x]=await Promise.all([
+    sb.from('orders').select('*').order('id',{ascending:false}),
+    sb.from('workers').select('*').order('id',{ascending:false}),
+    sb.from('materials').select('*').order('id',{ascending:false}),
+    sb.from('salary').select('*').order('id',{ascending:false}),
+    sb.from('fixed_expenses').select('*').order('id',{ascending:false}),
+    sb.from('xiaoliu').select('*').order('id',{ascending:false})
+  ]);
+  allData={orders:o.data||[],workers:w.data||[],materials:m.data||[],salary:s.data||[],fixed:f.data||[],xiaoliu:x.data||[]};
+  return allData;
+}
+async function renderReport(){
+  const sel=document.getElementById('report-month-sel');
+  const d=await fetchAllData();
+  const months=new Set([curM]);
+  [...d.orders,...d.workers,...d.materials,...d.salary,...d.fixed,...d.xiaoliu].forEach(r=>{
+    const mo=r.month||(r.date?r.date.substring(0,7):null);if(mo)months.add(mo);
+  });
+  const sorted=[...months].sort().reverse();
+  const prev=sel.value;
+  sel.innerHTML=sorted.map(mo=>`<option value="${mo}">${mo}</option>`).join('');
+  if(prev&&sorted.includes(prev))sel.value=prev;
+  const mon=sel.value;
+  const orders=d.orders.filter(r=>(r.date||'').startsWith(mon));
+  const totalOrders=orders.reduce((a,b)=>a+(b.amount||0),0);
+  const xlIncome=d.xiaoliu.filter(r=>r.month===mon).reduce((a,b)=>a+(b.amount||0),0);
+  const workerExp=d.workers.filter(r=>r.month===mon).reduce((a,b)=>a+(b.amount||0),0);
+  const matExp=d.materials.filter(r=>r.month===mon||(r.date||'').startsWith(mon)).reduce((a,b)=>a+(b.amount||0),0);
+  const salExp=d.salary.find(r=>r.month===mon)?171039:0;
+  const fxExp=d.fixed.filter(r=>(r.date||'').startsWith(mon)).reduce((a,b)=>a+(b.amount||0),0);
+  const totalIncome=totalOrders+xlIncome,totalExp=workerExp+matExp+salExp+fxExp,net=totalIncome-totalExp;
+  document.getElementById('report-content').innerHTML=`
+  <div class="report-metrics">
+    <div class="metric"><div class="metric-label">總收入</div><div class="metric-value income">${fmt(totalIncome)}</div></div>
+    <div class="metric"><div class="metric-label">總支出</div><div class="metric-value expense">${fmt(totalExp)}</div></div>
+    <div class="metric"><div class="metric-label">本月結餘</div><div class="metric-value" style="color:${net>=0?'var(--green)':'var(--red)'}">${fmt(net)}</div></div>
+  </div>
+  <div class="section-title">收入明細</div>
+  <div class="report-item"><span>客戶訂單</span><span class="income">${fmt(totalOrders)}</span></div>
+  <div class="report-item"><span>小劉月收款</span><span class="income">${fmt(xlIncome)}</span></div>
+  <div class="report-total"><span>收入合計</span><span class="income">${fmt(totalIncome)}</span></div>
+  <div class="divider"></div>
+  <div class="section-title">支出明細</div>
+  <div class="report-item"><span>薪資發放</span><span class="expense">${salExp?fmt(salExp):'<span style="color:var(--text3)">未登記</span>'}</span></div>
+  <div class="report-item"><span>工人安裝費</span><span class="expense">${fmt(workerExp)}</span></div>
+  <div class="report-item"><span>材料貨款（永騏）</span><span class="expense">${fmt(matExp)}</span></div>
+  <div class="report-item"><span>固定支出</span><span class="expense">${fmt(fxExp)}</span></div>
+  <div class="report-total"><span>支出合計</span><span class="expense">${fmt(totalExp)}</span></div>`;
+}
+
+// ── EXCEL EXPORT ──
+let exportMode='full'; // 'full' or single sheet
+function showExportModal(){
+  exportMode='full';
+  document.getElementById('export-modal-sub').textContent='選擇要匯出的工作表：';
+  document.getElementById('export-options').style.display='grid';
+  document.querySelectorAll('#export-options input').forEach(cb=>cb.checked=true);
+  document.getElementById('export-modal').classList.add('show');
+}
+function exportExcel(sheet){
+  exportMode=sheet;
+  document.getElementById('export-modal-sub').textContent='將匯出「'+sheetLabel(sheet)+'」的所有資料';
+  document.getElementById('export-options').style.display='none';
+  document.getElementById('export-modal').classList.add('show');
+}
+function sheetLabel(s){return{orders:'客戶訂單',workers:'工人費用',materials:'材料貨款',salary:'薪資發放',fixed:'固定支出',xiaoliu:'小劉月收',summary:'月收支摘要'}[s]||s}
+function closeModal(){document.getElementById('export-modal').classList.remove('show')}
+function closeModalOutside(e){if(e.target===document.getElementById('export-modal'))closeModal()}
+
+async function doExportExcel(){
+  const btn=document.getElementById('btn-export-confirm');
+  btn.disabled=true;btn.textContent='處理中...';
+  toast('正在準備 Excel 檔案...');
+  await fetchAllData();
+  const wb=XLSX.utils.book_new();
+  const sheets=exportMode==='full'
+    ?[...document.querySelectorAll('#export-options input:checked')].map(cb=>cb.value)
+    :[exportMode];
+
+  const payLabel={check:'支票',transfer:'匯款',cash:'現金'};
+  const invLabel={yes:'有發票',no:'無發票'};
+
+  if(sheets.includes('orders')){
+    const rows=[['日期','客戶名稱','金額','發票','付款方式','收款狀態','備註','入帳方向']];
+    allData.orders.forEach(o=>{
+      let dir='';
+      if(o.invoice==='yes') dir=o.payment==='transfer'?'公司銀行（注意手續費）':'存入公司戶';
+      else dir=o.payment==='cash'?'存入金庫':'存入陳建隆戶';
+      rows.push([o.date||'',o.client||'',o.amount||0,invLabel[o.invoice]||'',payLabel[o.payment]||'',o.status==='paid'?'已收款':'未收款',o.note||'',dir]);
+    });
+    const ws=XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols']=[{wch:12},{wch:20},{wch:12},{wch:10},{wch:10},{wch:10},{wch:25},{wch:20}];
+    styleHeader(ws,rows[0].length);
+    XLSX.utils.book_append_sheet(wb,ws,'客戶訂單');
+  }
+  if(sheets.includes('workers')){
+    const rows=[['結算月份','工人姓名','安裝費','付款日期','工程說明']];
+    allData.workers.forEach(w=>rows.push([w.month||'',w.name||'',w.amount||0,w.paydate||'',w.note||'']));
+    const ws=XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols']=[{wch:12},{wch:15},{wch:12},{wch:12},{wch:30}];
+    styleHeader(ws,rows[0].length);
+    XLSX.utils.book_append_sheet(wb,ws,'工人費用');
+  }
+  if(sheets.includes('materials')){
+    const rows=[['進貨日期','月份歸屬','金額','繳款狀態','備註']];
+    allData.materials.forEach(m=>rows.push([m.date||'',m.month||'',m.amount||0,m.status==='paid'?'已繳款':'未繳款',m.note||'']));
+    const ws=XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols']=[{wch:12},{wch:10},{wch:12},{wch:10},{wch:30}];
+    styleHeader(ws,rows[0].length);
+    XLSX.utils.book_append_sheet(wb,ws,'材料貨款');
+  }
+  if(sheets.includes('salary')){
+    const rows=[['發放月份','薪資總額','備註'],
+      ['','固定明細',''],['陳建隆','73554',''],['陳敏篁','20000',''],['陳曉葳','20000',''],['劉育瑋＋劉昱伶','57485','領現金（製造金流）'],['','','']];
+    allData.salary.forEach(s=>rows.push([s.month||'',s.total||171039,s.note||'']));
+    const ws=XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols']=[{wch:12},{wch:12},{wch:25}];
+    styleHeader(ws,rows[0].length);
+    XLSX.utils.book_append_sheet(wb,ws,'薪資發放');
+  }
+  if(sheets.includes('fixed')){
+    const rows=[['日期','項目','金額','備註']];
+    allData.fixed.forEach(f=>rows.push([f.date||'',fxNames[f.type]||f.type,f.amount||0,f.note||'']));
+    const ws=XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols']=[{wch:12},{wch:18},{wch:12},{wch:25}];
+    styleHeader(ws,rows[0].length);
+    XLSX.utils.book_append_sheet(wb,ws,'固定支出');
+  }
+  if(sheets.includes('xiaoliu')){
+    const rows=[['月份','收款日期','實收金額','備註'],['','固定明細','',''],
+      ['','顧問費',20000,''],['','零用金',5000,''],['','勞健保勞退',18326,''],['','房租分擔',15000,''],['','每月合計',58326,''],['','','','']];
+    allData.xiaoliu.forEach(x=>rows.push([x.month||'',x.date||'',x.amount||0,x.note||'']));
+    const ws=XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols']=[{wch:10},{wch:12},{wch:12},{wch:25}];
+    styleHeader(ws,rows[0].length);
+    XLSX.utils.book_append_sheet(wb,ws,'小劉月收');
+  }
+  if(sheets.includes('summary')){
+    const months=new Set();
+    [...allData.orders,...allData.workers,...allData.materials,...allData.salary,...allData.fixed,...allData.xiaoliu].forEach(r=>{
+      const mo=r.month||(r.date?r.date.substring(0,7):null);if(mo)months.add(mo);
+    });
+    const sorted=[...months].sort();
+    const rows=[['月份','客戶訂單收入','小劉月收','收入合計','薪資','工人費用','材料貨款','固定支出','支出合計','結餘']];
+    sorted.forEach(mon=>{
+      const oInc=allData.orders.filter(r=>(r.date||'').startsWith(mon)).reduce((a,b)=>a+(b.amount||0),0);
+      const xInc=allData.xiaoliu.filter(r=>r.month===mon).reduce((a,b)=>a+(b.amount||0),0);
+      const wExp=allData.workers.filter(r=>r.month===mon).reduce((a,b)=>a+(b.amount||0),0);
+      const mExp=allData.materials.filter(r=>r.month===mon||(r.date||'').startsWith(mon)).reduce((a,b)=>a+(b.amount||0),0);
+      const sExp=allData.salary.find(r=>r.month===mon)?171039:0;
+      const fExp=allData.fixed.filter(r=>(r.date||'').startsWith(mon)).reduce((a,b)=>a+(b.amount||0),0);
+      const ti=oInc+xInc,te=wExp+mExp+sExp+fExp;
+      rows.push([mon,oInc,xInc,ti,sExp,wExp,mExp,fExp,te,ti-te]);
+    });
+    const ws=XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols']=[{wch:10},{wch:14},{wch:12},{wch:12},{wch:12},{wch:12},{wch:14},{wch:12},{wch:12},{wch:12}];
+    styleHeader(ws,rows[0].length);
+    XLSX.utils.book_append_sheet(wb,ws,'月收支摘要');
+  }
+
+  const fname='君宥會計_'+new Date().toISOString().substring(0,10)+'.xlsx';
+  XLSX.writeFile(wb,fname);
+  btn.disabled=false;btn.textContent='📥 下載 Excel';
+  closeModal();toast('✓ Excel 已下載：'+fname);
+}
+
+function styleHeader(ws,cols){
+  for(let c=0;c<cols;c++){
+    const addr=XLSX.utils.encode_cell({r:0,c});
+    if(!ws[addr])continue;
+    ws[addr].s={font:{bold:true},fill:{fgColor:{rgb:'EAF3DE'}},alignment:{horizontal:'center'}};
+  }
+}
+
+async function init(){
+  setSyncStatus('loading');
+  await Promise.all([loadOrders(),loadWorkers(),loadMaterials(),loadSalary(),loadFixed(),loadXiaoliu()]);
+  setSyncStatus('ok');
+}
+init();
+</script>
+</body>
+</html>
+initial-scale=1.0">
 <title>君宥工程會計系統</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
