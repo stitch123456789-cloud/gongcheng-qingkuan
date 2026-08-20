@@ -1,724 +1,1240 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="zh-Hant">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>君宥工程會計系統</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>小型工程請款登錄</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-:root{--bg:#ffffff;--bg2:#f7f7f5;--bg3:#f0efe9;--border:#e5e4de;--border2:#d0cfc8;--text:#1a1a18;--text2:#6b6b66;--text3:#9b9b94;--blue:#185FA5;--green:#0F6E56;--red:#993C1D;--purple:#534AB7;--radius:10px;--radius-sm:6px}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg3);color:var(--text);min-height:100vh}
-.app{max-width:860px;margin:0 auto;padding:1rem}
-.header{padding:.75rem 0 1.25rem;border-bottom:0.5px solid var(--border);margin-bottom:1.25rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
-.header h1{font-size:18px;font-weight:600;display:flex;align-items:center;gap:8px}
-.header-right{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.header-date{font-size:12px;color:var(--text3)}
-.sync-status{font-size:12px;padding:3px 10px;border-radius:12px;border:0.5px solid var(--border)}
-.sync-ok{background:#EAF3DE;color:#27500A;border-color:#C0DD97}
-.sync-err{background:#FCEBEB;color:#791F1F;border-color:#F7C1C1}
-.sync-loading{background:#E6F1FB;color:#0C447C;border-color:#B5D4F4}
-.nav{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:1.25rem}
-.nav-btn{padding:6px 13px;font-size:13px;border:0.5px solid var(--border);border-radius:20px;background:var(--bg);color:var(--text2);cursor:pointer;transition:all .15s;white-space:nowrap}
-.nav-btn.active{border-color:var(--border2);color:var(--text);font-weight:500}
-.nav-btn:hover:not(.active){background:var(--bg2)}
-.section{display:none}.section.active{display:block}
-.card{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius);padding:1.25rem;margin-bottom:1rem}
-.card-title{font-size:14px;font-weight:500;margin-bottom:1rem;display:flex;align-items:center;gap:6px}
-.form-row{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:11px}
-.form-row.full{grid-template-columns:1fr}
-.form-row.three{grid-template-columns:1fr 1fr 1fr}
-.form-group label{font-size:12px;color:var(--text2);display:block;margin-bottom:4px}
-.form-group input,.form-group select,.form-group textarea{width:100%;padding:8px 10px;font-size:14px;border:0.5px solid var(--border);border-radius:var(--radius-sm);background:var(--bg);color:var(--text);outline:none;transition:border .15s}
-.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--border2)}
-.form-group textarea{height:68px;resize:vertical}
-.info-box{background:var(--bg2);border-radius:var(--radius-sm);padding:10px 12px;font-size:12px;color:var(--text2);margin-bottom:12px;border-left:2px solid var(--purple)}
-.info-box strong{color:var(--text)}
-.btn{padding:9px 16px;font-size:14px;font-weight:500;border:0.5px solid var(--border2);border-radius:var(--radius-sm);background:var(--bg);color:var(--text);cursor:pointer;transition:all .15s;width:100%}
-.btn:hover{background:var(--bg2)}
-.btn:active{transform:scale(.99)}
-.btn:disabled{opacity:.5;cursor:not-allowed}
-.btn-excel{background:#EAF3DE;border-color:#C0DD97;color:#27500A;width:auto;padding:8px 16px;font-size:13px}
-.btn-excel:hover{background:#d8edc7}
-.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
-table{width:100%;border-collapse:collapse;font-size:13px}
-thead th{text-align:left;padding:7px 8px;font-weight:500;font-size:12px;color:var(--text2);border-bottom:0.5px solid var(--border)}
-tbody td{padding:8px;border-bottom:0.5px solid var(--border);color:var(--text);vertical-align:middle}
-tbody tr:last-child td{border-bottom:none}
-tbody tr:hover{background:var(--bg2)}
-.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:500}
-.b-invoice{background:#EEEDFE;color:#3C3489}.b-noinvoice{background:#F1EFE8;color:#5F5E5A}
-.b-check{background:#E1F5EE;color:#085041}.b-transfer{background:#E6F1FB;color:#0C447C}
-.b-cash{background:#FAEEDA;color:#633806}.b-company{background:#EAF3DE;color:#27500A}
-.b-personal{background:#FAECE7;color:#712B13}.b-safe{background:#FBEAF0;color:#72243E}
-.b-paid{background:#E1F5EE;color:#085041}.b-unpaid{background:#FCEBEB;color:#791F1F}
-.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:9px;margin-bottom:1.25rem}
-.metric{background:var(--bg2);border-radius:var(--radius-sm);padding:.9rem}
-.metric-label{font-size:12px;color:var(--text2);margin-bottom:3px}
-.metric-value{font-size:21px;font-weight:600;color:var(--text)}
-.metric-sub{font-size:11px;color:var(--text3);margin-top:2px}
-.flow-box{background:var(--bg2);border-radius:var(--radius-sm);padding:10px 12px;margin-top:8px;font-size:13px}
-.flow-title{font-weight:500;font-size:13px;margin-bottom:6px}
-.salary-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:0.5px solid var(--border)}
-.salary-row:last-child{border-bottom:none}
-.salary-name{font-size:14px;font-weight:500}.salary-note{font-size:11px;color:var(--text3);margin-top:2px}
-.salary-amt{font-size:15px;font-weight:600;color:var(--blue)}
-.fixed-row{display:grid;grid-template-columns:1fr auto;gap:12px;padding:11px 0;border-bottom:0.5px solid var(--border);align-items:start}
-.fixed-row:last-child{border-bottom:none}
-.fixed-name{font-size:14px;font-weight:500}.fixed-note{font-size:12px;color:var(--text3);margin-top:3px}
-.fixed-amt{font-size:15px;font-weight:600;text-align:right;color:var(--blue)}.fixed-due{font-size:11px;color:var(--text3);text-align:right;margin-top:2px}
-.xl-row{display:flex;justify-content:space-between;padding:7px 0;font-size:13px;border-bottom:0.5px solid var(--border)}
-.xl-row:last-child{border-bottom:none}
-.xl-total{display:flex;justify-content:space-between;padding-top:10px;font-size:15px;font-weight:600}
-.report-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:1.25rem}
-.report-item{display:flex;justify-content:space-between;padding:8px 0;font-size:14px;border-bottom:0.5px solid var(--border)}
-.report-item:last-child{border-bottom:none}
-.report-total{display:flex;justify-content:space-between;padding:11px 0 0;font-size:15px;font-weight:600;border-top:1px solid var(--border2);margin-top:6px}
-.section-title{font-size:12px;font-weight:500;color:var(--text2);letter-spacing:.4px;text-transform:uppercase;margin-bottom:8px}
-.income{color:var(--green)}.expense{color:var(--red)}
-.del-btn{background:none;border:none;cursor:pointer;color:var(--text3);font-size:16px;padding:2px 6px;line-height:1}
-.del-btn:hover{color:#E24B4A}
-.divider{height:.5px;background:var(--border);margin:1rem 0}
-.empty{text-align:center;padding:2rem;color:var(--text3);font-size:13px}
-.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#2C2C2A;color:#F1EFE8;padding:10px 22px;border-radius:20px;font-size:13px;opacity:0;transition:opacity .3s;pointer-events:none;z-index:999;white-space:nowrap}
-.toast.show{opacity:1}
-.loading-row{text-align:center;padding:1.5rem;color:var(--text3);font-size:13px}
-/* Excel export modal */
-.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:100;align-items:center;justify-content:center}
-.modal-overlay.show{display:flex}
-.modal{background:var(--bg);border-radius:var(--radius);padding:1.5rem;width:90%;max-width:420px;box-shadow:0 8px 32px rgba(0,0,0,.15)}
-.modal-title{font-size:16px;font-weight:600;margin-bottom:.5rem}
-.modal-sub{font-size:13px;color:var(--text2);margin-bottom:1.25rem}
-.modal-options{display:grid;gap:8px;margin-bottom:1.25rem}
-.modal-opt{display:flex;align-items:center;gap:10px;padding:10px 12px;border:0.5px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;transition:all .15s}
-.modal-opt:hover{background:var(--bg2);border-color:var(--border2)}
-.modal-opt input[type=checkbox]{width:16px;height:16px;cursor:pointer}
-.modal-opt-text{font-size:14px}
-.modal-opt-sub{font-size:12px;color:var(--text3)}
-.modal-footer{display:flex;gap:8px;justify-content:flex-end}
-.btn-cancel{width:auto;padding:8px 18px;font-size:13px;color:var(--text2)}
-.btn-confirm{width:auto;padding:8px 18px;font-size:13px;background:#EAF3DE;border-color:#C0DD97;color:#27500A}
-.btn-confirm:hover{background:#d8edc7}
-@media(max-width:600px){
-  .form-row{grid-template-columns:1fr}.form-row.three{grid-template-columns:1fr 1fr}
-  .metrics{grid-template-columns:1fr 1fr}.report-metrics{grid-template-columns:1fr}
-  .nav-btn{padding:5px 10px;font-size:12px}table{font-size:12px}
-  thead th,tbody td{padding:6px 5px}
-}
+  :root{
+    --blueprint-900:#0F2D4A;
+    --blueprint-700:#1B3B5F;
+    --blueprint-500:#2F5D8A;
+    --blueprint-line:#3E71A3;
+    --paper:#FBF9F4;
+    --paper-dim:#F1EDE3;
+    --ink:#1F2A33;
+    --ink-soft:#5B6672;
+    --amber:#E8A33D;
+    --amber-dark:#C6821F;
+    --green:#3E8E5A;
+    --green-bg:#E4F1E8;
+    --amber-bg:#FBF0DD;
+    --red:#B0392B;
+    --red-bg:#FAE6E2;
+    --border:#D8D1C0;
+    --radius:10px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{background:var(--paper-dim);font-family:'Noto Sans TC',sans-serif;color:var(--ink);min-height:100vh;padding-bottom:48px;}
+  .mono{font-family:'JetBrains Mono',monospace;}
+
+  header{
+    background:
+      repeating-linear-gradient(0deg, transparent 0 27px, var(--blueprint-line) 27px 28px),
+      repeating-linear-gradient(90deg, transparent 0 27px, var(--blueprint-line) 27px 28px),
+      linear-gradient(160deg, var(--blueprint-900), var(--blueprint-700));
+    background-size: 28px 28px, 28px 28px, 100% 100%;
+    background-blend-mode: overlay, overlay, normal;
+    color:#fff;padding:22px 18px 18px;border-bottom:4px solid var(--amber);position:relative;
+  }
+  header .eyebrow{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#BFD4E8;font-weight:500;margin-bottom:4px;}
+  header h1{margin:0;font-size:22px;font-weight:900;letter-spacing:.02em;}
+  header .sub{font-size:12px;color:#9FBBD6;margin-top:4px;font-family:'JetBrains Mono',monospace;}
+
+  .totals-bar{display:flex;gap:10px;margin:14px -4px 0;padding:0 4px;overflow-x:auto;}
+  .stat{flex:1 1 0;min-width:82px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.18);border-radius:var(--radius);padding:8px 10px;}
+  .stat .num{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:15px;color:var(--amber);}
+  .stat.status-green .num{color:#7FD99A;}
+  .stat.status-red .num{color:#F2A69B;}
+  .stat .lbl{font-size:10.5px;color:#CBDCEC;margin-top:2px;}
+
+  .tabs{display:flex;gap:8px;padding:14px 16px 0;max-width:640px;margin:0 auto;}
+  .tab-btn{flex:1;padding:11px 8px;border-radius:999px;border:1.5px solid var(--border);background:var(--paper);color:var(--ink-soft);font-family:'Noto Sans TC',sans-serif;font-weight:700;font-size:13.5px;cursor:pointer;}
+  .tab-btn.active{background:var(--blueprint-700);border-color:var(--blueprint-700);color:#fff;}
+
+  main{max-width:640px;margin:0 auto;padding:14px 16px 0;}
+
+  .card{background:var(--paper);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:14px;box-shadow:0 1px 2px rgba(15,45,74,0.05);}
+  .card-title{font-weight:900;font-size:15px;margin:0 0 12px;display:flex;align-items:center;gap:8px;}
+  .card-title .tag{background:var(--amber);color:var(--blueprint-900);font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;padding:2px 7px;border-radius:5px;}
+  .card-subtitle{font-weight:700;font-size:12.5px;color:var(--blueprint-700);margin:0 0 10px;border-top:1px dashed var(--border);padding-top:12px;}
+
+  .field{margin-bottom:12px;}
+  .field label{display:block;font-size:12.5px;font-weight:700;color:var(--blueprint-700);margin-bottom:5px;}
+  .field .hint{font-weight:400;color:var(--ink-soft);font-size:11px;}
+  input[type=text], input[type=number], input[type=date], input[type=password], select, textarea{
+    width:100%;padding:11px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:15px;
+    font-family:'Noto Sans TC',sans-serif;background:#fff;color:var(--ink);
+  }
+  input[type=number], .num-input{font-family:'JetBrains Mono',monospace;}
+  textarea{resize:vertical;min-height:56px;font-family:'Noto Sans TC',sans-serif;}
+  input:focus, select:focus, textarea:focus{outline:2.5px solid var(--amber);outline-offset:0;border-color:var(--amber-dark);}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+
+  .amt-box{background:var(--paper-dim);border:1.5px dashed var(--blueprint-500);border-radius:8px;padding:10px 12px;}
+  .amt-box .row2{margin-top:8px;}
+  .amt-locked{background:var(--paper-dim);border:1.5px dashed var(--border);border-radius:8px;padding:16px 12px;text-align:center;}
+  .amt-locked .msg{font-size:13px;color:var(--ink-soft);margin-bottom:10px;}
+
+  .status-toggle{display:flex;gap:8px;}
+  .status-opt{flex:1;text-align:center;padding:11px 6px;border-radius:8px;border:1.5px solid var(--border);font-weight:700;font-size:13.5px;cursor:pointer;color:var(--ink-soft);background:#fff;}
+  .status-opt.sel-red{border-color:var(--red);background:var(--red-bg);color:var(--red);}
+  .status-opt.sel-green{border-color:var(--green);background:var(--green-bg);color:var(--green);}
+
+  .check-item{background:var(--paper-dim);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:10px;}
+  .check-item-head{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+  .ci-label{font-size:13px;font-weight:700;color:var(--ink);}
+  .ci-toggle{display:flex;gap:6px;flex-shrink:0;}
+  .ci-btn{width:38px;height:32px;border-radius:7px;border:1.5px solid var(--border);background:#fff;color:var(--ink-soft);font-weight:900;font-size:14px;}
+  .ci-btn.sel-green{border-color:var(--green);background:var(--green-bg);color:var(--green);}
+  .ci-btn.sel-red{border-color:var(--red);background:var(--red-bg);color:var(--red);}
+  .ci-note{margin-top:8px;font-size:13.5px;padding:8px 10px;}
+  .ci-row2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;}
+  .ci-row2 input{font-size:13.5px;padding:8px 10px;}
+
+  .photo-stage{margin-bottom:14px;}
+  .photo-stage-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px;}
+  .photo-stage-head .lbl{font-size:12.5px;font-weight:700;color:var(--blueprint-700);display:flex;align-items:center;gap:6px;}
+  .photo-stage-head .dot{width:8px;height:8px;border-radius:50%;display:inline-block;}
+  .dot.before{background:#9AA7B2;}
+  .dot.during{background:var(--amber-dark);}
+  .dot.after{background:var(--green);}
+  .photo-grid{display:flex;flex-wrap:wrap;gap:8px;}
+  .photo-thumb{position:relative;width:72px;height:72px;border-radius:8px;overflow:hidden;border:1.5px solid var(--border);background:var(--paper-dim);}
+  .photo-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+  .photo-thumb .rm{position:absolute;top:2px;right:2px;width:19px;height:19px;background:rgba(15,45,74,0.85);color:#fff;border-radius:50%;font-size:12px;display:flex;align-items:center;justify-content:center;line-height:1;}
+  .photo-thumb.uploading::after{content:"⏳";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.6);font-size:20px;}
+  .photo-add{width:72px;height:72px;border-radius:8px;border:1.5px dashed var(--blueprint-500);background:var(--paper-dim);display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--blueprint-700);font-size:22px;cursor:pointer;position:relative;}
+  .photo-add span{font-size:9px;font-weight:700;margin-top:1px;}
+  .photo-add input{position:absolute;inset:0;opacity:0;cursor:pointer;}
+
+  .btn-row{display:flex;gap:10px;margin-top:16px;}
+  button{font-family:'Noto Sans TC',sans-serif;cursor:pointer;border:none;}
+  .btn-primary{flex:1;background:var(--amber);color:var(--blueprint-900);font-weight:900;font-size:15px;padding:13px;border-radius:8px;}
+  .btn-primary:active{background:var(--amber-dark);}
+  .btn-ghost{background:transparent;color:var(--ink-soft);font-weight:700;font-size:14px;padding:13px 16px;border-radius:8px;border:1.5px solid var(--border);}
+
+  .list-toolbar{display:flex;gap:8px;margin-bottom:10px;}
+  .list-toolbar input{flex:1;}
+  .btn-export{background:var(--blueprint-700);color:#fff;font-weight:700;font-size:13px;padding:0 14px;border-radius:8px;white-space:nowrap;}
+
+  .lock-row{display:flex;gap:8px;margin-bottom:10px;}
+  .lock-btn{flex:1;background:var(--blueprint-900);color:#fff;font-weight:700;font-size:12.5px;padding:10px;border-radius:8px;}
+  .lock-btn.unlocked{background:var(--green);}
+  .change-pin-btn{flex:0 0 auto;background:transparent;border:1.5px solid var(--border);color:var(--ink-soft);font-weight:700;font-size:12px;padding:0 12px;border-radius:8px;}
+
+  .filter-row{display:flex;gap:6px;margin-bottom:12px;}
+  .filter-btn{flex:1;padding:8px 6px;border-radius:8px;border:1.5px solid var(--border);background:#fff;color:var(--ink-soft);font-weight:700;font-size:12.5px;}
+  .filter-btn.active{background:var(--blueprint-700);border-color:var(--blueprint-700);color:#fff;}
+
+  .empty{text-align:center;padding:48px 20px;color:var(--ink-soft);}
+  .empty .big{font-size:34px;margin-bottom:6px;}
+
+  .entry{position:relative;background:var(--paper);border:1px solid var(--border);border-left:5px solid var(--red);border-radius:var(--radius);padding:16px 14px 14px;margin-bottom:16px;}
+  .entry.is-done{border-left-color:var(--green);}
+  .entry::before{content:"";position:absolute;top:-1px;left:0;right:0;height:0;border-top:2.5px dashed var(--border);}
+  .entry::after{content:"";position:absolute;top:-8px;left:50%;transform:translateX(-50%);width:26px;height:16px;background:radial-gradient(circle at 50% 100%, transparent 8px, var(--paper-dim) 8.5px);}
+  .entry-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;}
+  .entry-idx{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--blueprint-500);font-weight:700;}
+  .status-pill{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:999px;margin-left:6px;}
+  .status-pill.green{background:var(--green-bg);color:var(--green);}
+  .status-pill.red{background:var(--red-bg);color:var(--red);}
+  .entry-site{font-size:16px;font-weight:900;color:var(--ink);margin-top:2px;}
+  .entry-addr{font-size:12.5px;color:var(--ink-soft);margin-top:2px;}
+  .entry-amt{text-align:right;flex-shrink:0;}
+  .entry-amt .main{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:17px;color:var(--amber-dark);}
+  .entry-amt .sub{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink-soft);}
+  .entry-amt .locked-tag{font-size:12.5px;color:var(--ink-soft);font-weight:700;}
+  .entry-meta{display:flex;flex-wrap:wrap;gap:6px 10px;margin-top:10px;font-size:12px;color:var(--ink-soft);font-family:'JetBrains Mono',monospace;}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;}
+  .chip{font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;}
+  .chip.item{background:var(--paper-dim);color:var(--blueprint-700);border:1px solid var(--border);}
+  .chip.ok{background:var(--green-bg);color:var(--green);}
+  .chip.warn{background:var(--amber-bg);color:var(--amber-dark);}
+  .chip.bad{background:var(--red-bg);color:var(--red);}
+
+  .pay-pill{margin-top:11px;width:100%;display:flex;align-items:center;justify-content:center;gap:6px;padding:10px;border-radius:8px;font-weight:900;font-size:13.5px;border:1.5px solid var(--border);}
+  .pay-pill.paid{background:var(--green-bg);border-color:var(--green);color:var(--green);}
+  .pay-pill.unpaid{background:var(--red-bg);border-color:var(--red);color:var(--red);}
+  .pay-pill.locked{opacity:0.72;}
+
+  .entry-note{margin-top:9px;font-size:12.5px;color:var(--ink);background:var(--paper-dim);border-radius:6px;padding:7px 9px;line-height:1.6;}
+  .entry-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px;border-top:1px solid var(--border);padding-top:10px;}
+  .icon-btn{background:transparent;border:1.5px solid var(--border);border-radius:7px;padding:8px;font-size:12.5px;font-weight:700;color:var(--ink-soft);}
+  .icon-btn.danger{color:var(--red);border-color:#E7C6C0;}
+  .icon-btn.edit{color:var(--blueprint-700);border-color:var(--blueprint-500);}
+  .icon-btn.photos{color:var(--amber-dark);border-color:var(--amber);}
+  .icon-btn.download{color:var(--green);border-color:var(--green);}
+
+  .photo-view{margin-top:12px;padding-top:10px;border-top:1px solid var(--border);}
+  .photo-view-stage{margin-bottom:10px;}
+  .photo-view-stage:last-child{margin-bottom:0;}
+  .photo-view-stage .lbl{font-size:11px;font-weight:700;color:var(--blueprint-700);margin-bottom:6px;display:flex;align-items:center;gap:5px;}
+  .photo-view-grid{display:flex;flex-wrap:wrap;gap:8px;}
+  .photo-view-grid img{width:64px;height:64px;object-fit:cover;border-radius:7px;border:1.5px solid var(--border);cursor:pointer;}
+  .photo-none{font-size:11.5px;color:var(--ink-soft);}
+
+  .loading-msg{text-align:center;padding:40px;color:var(--ink-soft);font-size:13px;}
+  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--blueprint-900);color:#fff;padding:10px 18px;border-radius:999px;font-size:13px;font-weight:500;opacity:0;pointer-events:none;transition:opacity .25s, transform .25s;z-index:50;white-space:nowrap;max-width:88vw;text-align:center;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(-4px);}
+
+  .lightbox{display:none;position:fixed;inset:0;background:rgba(15,45,74,0.92);z-index:80;align-items:center;justify-content:center;padding:24px;}
+  .lightbox.show{display:flex;}
+  .lightbox img{max-width:100%;max-height:100%;border-radius:8px;}
+  .lightbox .close{position:absolute;top:18px;right:18px;width:36px;height:36px;background:rgba(255,255,255,0.15);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;}
+
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(15,45,74,0.55);z-index:90;align-items:center;justify-content:center;padding:24px;}
+  .modal-overlay.show{display:flex;}
+  .modal-box{background:var(--paper);border-radius:var(--radius);padding:20px;max-width:340px;width:100%;box-shadow:0 8px 30px rgba(15,45,74,0.25);}
+  .modal-box p{font-size:14.5px;color:var(--ink);margin:0 0 12px;line-height:1.6;}
+  .modal-actions{display:flex;gap:10px;margin-top:4px;}
+
+  .conn-error{
+    max-width:640px;margin:14px auto 0;padding:0 16px;
+  }
+  .conn-error .box{
+    background:var(--red-bg);border:1.5px solid var(--red);border-radius:var(--radius);
+    padding:14px;font-size:13px;color:var(--red);line-height:1.6;
+  }
 </style>
 </head>
 <body>
-<div class="app">
-  <div class="header">
-    <h1>🏗 君宥工程會計系統</h1>
-    <div class="header-right">
-      <span class="header-date" id="today-date"></span>
-      <span class="sync-status sync-loading" id="sync-status">連線中...</span>
-    </div>
-  </div>
-  <div class="nav">
-    <button class="nav-btn active" onclick="showSection('orders',this)">📋 客戶訂單</button>
-    <button class="nav-btn" onclick="showSection('workers',this)">🔧 工人費用</button>
-    <button class="nav-btn" onclick="showSection('materials',this)">📦 材料貨款</button>
-    <button class="nav-btn" onclick="showSection('salary',this)">👥 薪資發放</button>
-    <button class="nav-btn" onclick="showSection('fixed',this)">🏠 固定支出</button>
-    <button class="nav-btn" onclick="showSection('xiaoliu',this)">🤝 小劉月收</button>
-    <button class="nav-btn" onclick="showSection('report',this)">📊 月報表</button>
-  </div>
 
-  <!-- 客戶訂單 -->
-  <div id="section-orders" class="section active">
-    <div class="metrics">
-      <div class="metric"><div class="metric-label">本月訂單</div><div class="metric-value" id="m-orders">-</div><div class="metric-sub">筆</div></div>
-      <div class="metric"><div class="metric-label">有發票應收</div><div class="metric-value" id="m-invoice">-</div><div class="metric-sub">入君宥戶頭</div></div>
-      <div class="metric"><div class="metric-label">無發票應收</div><div class="metric-value" id="m-noinvoice">-</div><div class="metric-sub">入陳建隆/金庫</div></div>
-      <div class="metric"><div class="metric-label">未收款</div><div class="metric-value" id="m-unpaid">-</div><div class="metric-sub">筆待收</div></div>
-    </div>
-    <div class="card">
-      <div class="card-title">➕ 新增訂單</div>
-      <div class="form-row">
-        <div class="form-group"><label>客戶名稱</label><input type="text" id="o-client" placeholder="客戶公司或姓名"></div>
-        <div class="form-group"><label>訂單日期</label><input type="date" id="o-date"></div>
-      </div>
-      <div class="form-row">
-        <div class="form-group"><label>金額（元）</label><input type="number" id="o-amount" placeholder="0"></div>
-        <div class="form-group"><label>開發票？</label>
-          <select id="o-invoice" onchange="updateFlow()">
-            <option value="yes">有開發票（含稅）</option>
-            <option value="no">不開發票（無稅）</option>
-          </select>
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-group"><label>付款方式</label>
-          <select id="o-payment" onchange="updateFlow()">
-            <option value="check">支票</option>
-            <option value="transfer">匯款</option>
-            <option value="cash">現金</option>
-          </select>
-        </div>
-        <div class="form-group"><label>收款狀態</label>
-          <select id="o-status">
-            <option value="unpaid">未收款</option>
-            <option value="paid">已收款</option>
-          </select>
-        </div>
-      </div>
-      <div class="flow-box"><div class="flow-title">入帳方向</div><div id="flow-detail">－</div></div>
-      <div class="form-row full" style="margin-top:10px">
-        <div class="form-group"><label>備註</label><textarea id="o-note" placeholder="工程項目、票號等..."></textarea></div>
-      </div>
-      <div class="btn-row">
-        <button class="btn" style="flex:1" id="btn-order" onclick="addOrder()">✓ 儲存訂單</button>
-        <button class="btn btn-excel" onclick="exportExcel('orders')">📥 匯出 Excel</button>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-title">📋 訂單紀錄</div>
-      <div id="orders-list"><div class="loading-row">載入中...</div></div>
-    </div>
-  </div>
+<header>
+  <div class="eyebrow">小型工程 · 現場登錄</div>
+  <h1>工程請款登錄</h1>
+  <div class="sub">派工單 → 請款明細 · 團隊共用</div>
+  <div class="totals-bar" id="totalsBar"></div>
+</header>
 
-  <!-- 工人費用 -->
-  <div id="section-workers" class="section">
-    <div class="card">
-      <div class="card-title">➕ 登記工人安裝費</div>
-      <div class="form-row">
-        <div class="form-group"><label>工人姓名</label><input type="text" id="w-name" placeholder="工人姓名"></div>
-        <div class="form-group"><label>結算月份</label><input type="month" id="w-month"></div>
-      </div>
-      <div class="form-row">
-        <div class="form-group"><label>安裝費（元）</label><input type="number" id="w-amount" placeholder="0"></div>
-        <div class="form-group"><label>付款日期</label><input type="date" id="w-paydate"></div>
-      </div>
-      <div class="form-row full">
-        <div class="form-group"><label>工程說明</label><textarea id="w-note" placeholder="安裝項目、工地地點等..."></textarea></div>
-      </div>
-      <div class="btn-row">
-        <button class="btn" style="flex:1" id="btn-worker" onclick="addWorker()">✓ 儲存紀錄</button>
-        <button class="btn btn-excel" onclick="exportExcel('workers')">📥 匯出 Excel</button>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-title">📋 工人費用紀錄</div>
-      <div id="workers-list"><div class="loading-row">載入中...</div></div>
-    </div>
-  </div>
-
-  <!-- 材料貨款 -->
-  <div id="section-materials" class="section">
-    <div class="info-box"><strong>永騏付款時程：</strong>月初收到上月帳單 → 每月 15 號前繳上上月貨款<br>例：6/15 前繳清 4 月份貨款</div>
-    <div class="card">
-      <div class="card-title">➕ 進貨登記</div>
-      <div class="form-row">
-        <div class="form-group"><label>進貨日期</label><input type="date" id="mat-date"></div>
-        <div class="form-group"><label>月份歸屬</label><input type="month" id="mat-month"></div>
-      </div>
-      <div class="form-row">
-        <div class="form-group"><label>金額（元）</label><input type="number" id="mat-amount" placeholder="0"></div>
-        <div class="form-group"><label>繳款狀態</label>
-          <select id="mat-status">
-            <option value="unpaid">未繳款</option>
-            <option value="paid">已繳款</option>
-          </select>
-        </div>
-      </div>
-      <div class="form-row full">
-        <div class="form-group"><label>備註</label><textarea id="mat-note" placeholder="材料品項說明..."></textarea></div>
-      </div>
-      <div class="btn-row">
-        <button class="btn" style="flex:1" id="btn-material" onclick="addMaterial()">✓ 儲存紀錄</button>
-        <button class="btn btn-excel" onclick="exportExcel('materials')">📥 匯出 Excel</button>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-title">📋 材料紀錄</div>
-      <div id="materials-list"><div class="loading-row">載入中...</div></div>
-    </div>
-  </div>
-
-  <!-- 薪資 -->
-  <div id="section-salary" class="section">
-    <div class="info-box"><strong>發薪時間：</strong>每月月初發放。劉育瑋＆劉昱伶需從公司銀行領現金製造金流。</div>
-    <div class="card">
-      <div class="card-title">📊 固定薪資表</div>
-      <div class="salary-row"><div><div class="salary-name">陳建隆</div><div class="salary-note">入公司帳</div></div><div class="salary-amt">$73,554</div></div>
-      <div class="salary-row"><div><div class="salary-name">陳敏篁</div><div class="salary-note">入公司帳</div></div><div class="salary-amt">$20,000</div></div>
-      <div class="salary-row"><div><div class="salary-name">陳曉葳</div><div class="salary-note">入公司帳</div></div><div class="salary-amt">$20,000</div></div>
-      <div class="salary-row"><div><div class="salary-name">劉育瑋＋劉昱伶</div><div class="salary-note">公司銀行領現金（製造金流）</div></div><div class="salary-amt">$57,485</div></div>
-      <div class="report-total"><span>每月薪資總額</span><span style="color:var(--blue)">$171,039</span></div>
-    </div>
-    <div class="card">
-      <div class="card-title">✓ 登記薪資發放</div>
-      <div class="form-row">
-        <div class="form-group"><label>發放月份</label><input type="month" id="sal-month"></div>
-        <div class="form-group"><label>備註（如有調整）</label><input type="text" id="sal-note" placeholder="特殊說明..."></div>
-      </div>
-      <div class="btn-row">
-        <button class="btn" style="flex:1" id="btn-salary" onclick="addSalary()">✓ 登記發放</button>
-        <button class="btn btn-excel" onclick="exportExcel('salary')">📥 匯出 Excel</button>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-title">📋 發放紀錄</div>
-      <div id="salary-list"><div class="loading-row">載入中...</div></div>
-    </div>
-  </div>
-
-  <!-- 固定支出 -->
-  <div id="section-fixed" class="section">
-    <div class="card">
-      <div class="card-title">📋 固定支出清單</div>
-      <div class="fixed-row"><div><div class="fixed-name">房租－林口文化北路</div><div class="fixed-note">每月10日現金交房東簽收</div></div><div><div class="fixed-amt">$30,000</div><div class="fixed-due">每月10日</div></div></div>
-      <div class="fixed-row"><div><div class="fixed-name">房租－龜山樂善三路</div><div class="fixed-note">年繳，每年10月會計師確認續租</div></div><div><div class="fixed-amt">$36,000</div><div class="fixed-due">年繳</div></div></div>
-      <div class="fixed-row"><div><div class="fixed-name">零用金補充</div><div class="fixed-note">陳建隆 $5,000 ＋ 劉育瑋 $5,000（不足時補充）</div></div><div><div class="fixed-amt">$10,000</div><div class="fixed-due">不定時</div></div></div>
-      <div class="fixed-row"><div><div class="fixed-name">勞保＋健保＋勞退</div><div class="fixed-note">月底前繳前月費用，入離職當天加退保</div></div><div><div class="fixed-amt">依月計算</div><div class="fixed-due">月底前</div></div></div>
-      <div class="fixed-row"><div><div class="fixed-name">影印機費</div><div class="fixed-note"></div></div><div><div class="fixed-amt">依約定</div><div class="fixed-due">定期</div></div></div>
-    </div>
-    <div class="card">
-      <div class="card-title">➕ 登記付款</div>
-      <div class="form-row">
-        <div class="form-group"><label>項目</label>
-          <select id="fx-type">
-            <option value="rent_linkou">房租－林口</option>
-            <option value="rent_guishan">房租－龜山（年繳）</option>
-            <option value="petty_chen">零用金－陳建隆</option>
-            <option value="petty_liu">零用金－劉育瑋</option>
-            <option value="insurance">勞健保勞退</option>
-            <option value="printer">影印機費</option>
-            <option value="other">其他</option>
-          </select>
-        </div>
-        <div class="form-group"><label>日期</label><input type="date" id="fx-date"></div>
-      </div>
-      <div class="form-row">
-        <div class="form-group"><label>金額（元）</label><input type="number" id="fx-amount" placeholder="0"></div>
-        <div class="form-group"><label>備註</label><input type="text" id="fx-note" placeholder=""></div>
-      </div>
-      <div class="btn-row">
-        <button class="btn" style="flex:1" id="btn-fixed" onclick="addFixed()">✓ 儲存紀錄</button>
-        <button class="btn btn-excel" onclick="exportExcel('fixed')">📥 匯出 Excel</button>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-title">📋 付款紀錄</div>
-      <div id="fixed-list"><div class="loading-row">載入中...</div></div>
-    </div>
-  </div>
-
-  <!-- 小劉 -->
-  <div id="section-xiaoliu" class="section">
-    <div class="card">
-      <div class="card-title">💰 每月固定收款明細</div>
-      <div class="xl-row"><span>顧問費</span><span style="font-weight:500">$20,000</span></div>
-      <div class="xl-row"><span>零用金</span><span style="font-weight:500">$5,000</span></div>
-      <div class="xl-row"><span>勞保＋健保＋勞退</span><span style="font-weight:500">$18,326</span></div>
-      <div class="xl-row"><span>房租分擔</span><span style="font-weight:500">$15,000</span></div>
-      <div class="xl-total"><span>每月合計</span><span style="color:var(--blue)">$58,326</span></div>
-    </div>
-    <div class="card">
-      <div class="card-title">➕ 登記收款</div>
-      <div class="form-row">
-        <div class="form-group"><label>收款月份</label><input type="month" id="xl-month"></div>
-        <div class="form-group"><label>實收金額（元）</label><input type="number" id="xl-amount" value="58326"></div>
-      </div>
-      <div class="form-row">
-        <div class="form-group"><label>收款日期</label><input type="date" id="xl-date"></div>
-        <div class="form-group"><label>備註</label><input type="text" id="xl-note" placeholder="差額說明等..."></div>
-      </div>
-      <div class="btn-row">
-        <button class="btn" style="flex:1" id="btn-xiaoliu" onclick="addXiaoliu()">✓ 儲存收款</button>
-        <button class="btn btn-excel" onclick="exportExcel('xiaoliu')">📥 匯出 Excel</button>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-title">📋 收款紀錄</div>
-      <div id="xiaoliu-list"><div class="loading-row">載入中...</div></div>
-    </div>
-  </div>
-
-  <!-- 月報表 -->
-  <div id="section-report" class="section">
-    <div class="card">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:1.25rem;flex-wrap:wrap">
-        <label style="font-size:13px;color:var(--text2)">報表月份</label>
-        <select id="report-month-sel" onchange="renderReport()" style="width:auto;padding:6px 10px;font-size:13px;border:0.5px solid var(--border);border-radius:var(--radius-sm);background:var(--bg);color:var(--text)"></select>
-        <button class="btn btn-excel" onclick="showExportModal()">📥 匯出 Excel 報表</button>
-      </div>
-      <div id="report-content"><div class="loading-row">載入中...</div></div>
-    </div>
-  </div>
+<div id="connError" class="conn-error" style="display:none;">
+  <div class="box" id="connErrorMsg"></div>
 </div>
 
-<!-- Excel 匯出 Modal -->
-<div class="modal-overlay" id="export-modal" onclick="closeModalOutside(event)">
-  <div class="modal">
-    <div class="modal-title">📥 匯出 Excel 報表</div>
-    <div class="modal-sub" id="export-modal-sub">選擇要匯出的工作表：</div>
-    <div class="modal-options" id="export-options">
-      <label class="modal-opt"><input type="checkbox" value="orders" checked><div><div class="modal-opt-text">客戶訂單</div><div class="modal-opt-sub">所有訂單紀錄</div></div></label>
-      <label class="modal-opt"><input type="checkbox" value="workers" checked><div><div class="modal-opt-text">工人費用</div><div class="modal-opt-sub">安裝費紀錄</div></div></label>
-      <label class="modal-opt"><input type="checkbox" value="materials" checked><div><div class="modal-opt-text">材料貨款</div><div class="modal-opt-sub">永騏進貨紀錄</div></div></label>
-      <label class="modal-opt"><input type="checkbox" value="salary" checked><div><div class="modal-opt-text">薪資發放</div><div class="modal-opt-sub">每月薪資紀錄</div></div></label>
-      <label class="modal-opt"><input type="checkbox" value="fixed" checked><div><div class="modal-opt-text">固定支出</div><div class="modal-opt-sub">房租、零用金等</div></div></label>
-      <label class="modal-opt"><input type="checkbox" value="xiaoliu" checked><div><div class="modal-opt-text">小劉月收</div><div class="modal-opt-sub">每月收款紀錄</div></div></label>
-      <label class="modal-opt"><input type="checkbox" value="summary" checked><div><div class="modal-opt-text">月收支摘要</div><div class="modal-opt-sub">各月份收支總覽</div></div></label>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-cancel" onclick="closeModal()">取消</button>
-      <button class="btn btn-confirm" id="btn-export-confirm" onclick="doExportExcel()">📥 下載 Excel</button>
-    </div>
-  </div>
+<div class="tabs">
+  <button class="tab-btn active" id="tabAdd" onclick="switchTab('add')">＋ 新增請款</button>
+  <button class="tab-btn" id="tabList" onclick="switchTab('list')">📋 請款列表</button>
 </div>
+
+<main>
+  <div id="viewAdd"></div>
+  <div id="viewList" style="display:none;"></div>
+</main>
 
 <div class="toast" id="toast"></div>
 
-<script>
-const SUPABASE_URL='https://uqfkvvhnedjkpijubtfu.supabase.co';
-const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVxZmt2dmhuZWRqa3BpanVidGZ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNTc3MzgsImV4cCI6MjA5NjczMzczOH0.H79Ra0XPUzn8BE3r3GHxVvoLT296lIWxsQwLjv21CZ8';
-const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+  <div class="close">✕</div>
+  <img id="lightboxImg" src="" onclick="event.stopPropagation()">
+</div>
 
-const today=new Date();
-document.getElementById('today-date').textContent=today.getFullYear()+'年'+(today.getMonth()+1)+'月'+today.getDate()+'日';
-const curM=today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0');
-
-function setDefaults(){
-  const td=today.toISOString().split('T')[0],tm=td.substring(0,7);
-  ['o-date','w-paydate','mat-date','fx-date','xl-date'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=td});
-  ['w-month','mat-month','sal-month','xl-month'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=tm});
-}
-setDefaults();
-
-function setSyncStatus(s){
-  const el=document.getElementById('sync-status');
-  if(s==='ok'){el.textContent='☁ 已同步';el.className='sync-status sync-ok'}
-  else if(s==='err'){el.textContent='✗ 連線失敗';el.className='sync-status sync-err'}
-  else{el.textContent='↻ 同步中...';el.className='sync-status sync-loading'}
-}
-function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200)}
-function fmt(n){return'$'+Math.round(n||0).toLocaleString()}
-function fmtDate(d){return d||'-'}
-function showSection(id,btn){
-  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
-  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
-  document.getElementById('section-'+id).classList.add('active');
-  btn.classList.add('active');
-  if(id==='report')renderReport();
-}
-function updateFlow(){
-  const inv=document.getElementById('o-invoice').value,pay=document.getElementById('o-payment').value;
-  const pb=pay==='check'?'<span class="badge b-check">支票</span>':pay==='transfer'?'<span class="badge b-transfer">匯款</span>':'<span class="badge b-cash">現金</span>';
-  let html='';
-  if(inv==='yes'){html=pb+(pay==='transfer'?' → <span class="badge b-company">公司銀行（核對手續費）</span>':' → <span class="badge b-company">存入公司戶</span>')}
-  else{html=pb+(pay==='cash'?' → <span class="badge b-safe">存入金庫</span>':pay==='transfer'?' → <span class="badge b-personal">陳建隆戶（核對手續費）</span>':' → <span class="badge b-personal">存入陳建隆戶</span>')}
-  document.getElementById('flow-detail').innerHTML=html;
-}
-updateFlow();
-
-// CRUD helpers
-async function loadOrders(){
-  setSyncStatus('loading');
-  const {data,error}=await sb.from('orders').select('*').order('id',{ascending:false});
-  if(error){setSyncStatus('err');document.getElementById('orders-list').innerHTML='<div class="empty">載入失敗</div>';return}
-  setSyncStatus('ok');
-  const cur=data.filter(o=>(o.date||'').startsWith(curM));
-  document.getElementById('m-orders').textContent=cur.length;
-  document.getElementById('m-invoice').textContent=fmt(cur.filter(o=>o.invoice==='yes').reduce((a,b)=>a+(b.amount||0),0));
-  document.getElementById('m-noinvoice').textContent=fmt(cur.filter(o=>o.invoice==='no').reduce((a,b)=>a+(b.amount||0),0));
-  document.getElementById('m-unpaid').textContent=data.filter(o=>o.status==='unpaid').length;
-  const el=document.getElementById('orders-list');
-  if(!data.length){el.innerHTML='<div class="empty">尚無訂單紀錄</div>';return}
-  el.innerHTML='<table><thead><tr><th>日期</th><th>客戶</th><th>金額</th><th>發票</th><th>付款</th><th>狀態</th><th></th></tr></thead><tbody>'+
-  data.map(o=>`<tr><td>${fmtDate(o.date)}</td><td>${o.client}</td><td>${fmt(o.amount)}</td>
-  <td>${o.invoice==='yes'?'<span class="badge b-invoice">有</span>':'<span class="badge b-noinvoice">無</span>'}</td>
-  <td>${o.payment==='check'?'<span class="badge b-check">支票</span>':o.payment==='transfer'?'<span class="badge b-transfer">匯款</span>':'<span class="badge b-cash">現金</span>'}</td>
-  <td>${o.status==='paid'?'<span class="badge b-paid">已收</span>':'<span class="badge b-unpaid">未收</span>'}</td>
-  <td><button class="del-btn" onclick="delOrder(${o.id})">🗑</button></td></tr>`).join('')+'</tbody></table>';
-}
-async function addOrder(){
-  const client=document.getElementById('o-client').value.trim(),amount=parseFloat(document.getElementById('o-amount').value)||0;
-  if(!client||!amount){toast('請填寫客戶名稱與金額');return}
-  const btn=document.getElementById('btn-order');btn.disabled=true;btn.textContent='儲存中...';
-  const {error}=await sb.from('orders').insert({client,date:document.getElementById('o-date').value,amount,invoice:document.getElementById('o-invoice').value,payment:document.getElementById('o-payment').value,status:document.getElementById('o-status').value,note:document.getElementById('o-note').value});
-  btn.disabled=false;btn.textContent='✓ 儲存訂單';
-  if(error){toast('❌ 儲存失敗：'+error.message);return}
-  toast('✓ 訂單已儲存');document.getElementById('o-client').value='';document.getElementById('o-amount').value='';document.getElementById('o-note').value='';loadOrders();
-}
-async function delOrder(id){if(!confirm('確定刪除？'))return;await sb.from('orders').delete().eq('id',id);loadOrders();toast('已刪除')}
-
-async function loadWorkers(){
-  const {data,error}=await sb.from('workers').select('*').order('id',{ascending:false});
-  const el=document.getElementById('workers-list');
-  if(error||!data.length){el.innerHTML='<div class="empty">'+(error?'載入失敗':'尚無工人費用紀錄')+'</div>';return}
-  el.innerHTML='<table><thead><tr><th>結算月</th><th>工人</th><th>安裝費</th><th>付款日</th><th>備註</th><th></th></tr></thead><tbody>'+
-  data.map(w=>`<tr><td>${w.month}</td><td>${w.name}</td><td>${fmt(w.amount)}</td><td>${fmtDate(w.paydate)}</td><td style="color:var(--text3);font-size:12px">${w.note||'-'}</td><td><button class="del-btn" onclick="delWorker(${w.id})">🗑</button></td></tr>`).join('')+'</tbody></table>';
-}
-async function addWorker(){
-  const name=document.getElementById('w-name').value.trim(),amount=parseFloat(document.getElementById('w-amount').value)||0;
-  if(!name||!amount){toast('請填寫工人姓名與金額');return}
-  const btn=document.getElementById('btn-worker');btn.disabled=true;btn.textContent='儲存中...';
-  const {error}=await sb.from('workers').insert({name,month:document.getElementById('w-month').value,amount,paydate:document.getElementById('w-paydate').value,note:document.getElementById('w-note').value});
-  btn.disabled=false;btn.textContent='✓ 儲存紀錄';
-  if(error){toast('❌ 儲存失敗');return}
-  toast('✓ 工人費用已儲存');document.getElementById('w-name').value='';document.getElementById('w-amount').value='';document.getElementById('w-note').value='';loadWorkers();
-}
-async function delWorker(id){if(!confirm('確定刪除？'))return;await sb.from('workers').delete().eq('id',id);loadWorkers();toast('已刪除')}
-
-async function loadMaterials(){
-  const {data,error}=await sb.from('materials').select('*').order('id',{ascending:false});
-  const el=document.getElementById('materials-list');
-  if(error||!data.length){el.innerHTML='<div class="empty">'+(error?'載入失敗':'尚無材料紀錄')+'</div>';return}
-  el.innerHTML='<table><thead><tr><th>進貨日</th><th>月份</th><th>金額</th><th>繳款</th><th>備註</th><th></th></tr></thead><tbody>'+
-  data.map(m=>`<tr><td>${fmtDate(m.date)}</td><td>${m.month}</td><td>${fmt(m.amount)}</td><td>${m.status==='paid'?'<span class="badge b-paid">已繳</span>':'<span class="badge b-unpaid">未繳</span>'}</td><td style="color:var(--text3);font-size:12px">${m.note||'-'}</td><td><button class="del-btn" onclick="delMaterial(${m.id})">🗑</button></td></tr>`).join('')+'</tbody></table>';
-}
-async function addMaterial(){
-  const amount=parseFloat(document.getElementById('mat-amount').value)||0;
-  if(!amount){toast('請填寫金額');return}
-  const btn=document.getElementById('btn-material');btn.disabled=true;btn.textContent='儲存中...';
-  const {error}=await sb.from('materials').insert({date:document.getElementById('mat-date').value,month:document.getElementById('mat-month').value,amount,status:document.getElementById('mat-status').value,note:document.getElementById('mat-note').value});
-  btn.disabled=false;btn.textContent='✓ 儲存紀錄';
-  if(error){toast('❌ 儲存失敗');return}
-  toast('✓ 材料紀錄已儲存');document.getElementById('mat-amount').value='';document.getElementById('mat-note').value='';loadMaterials();
-}
-async function delMaterial(id){if(!confirm('確定刪除？'))return;await sb.from('materials').delete().eq('id',id);loadMaterials();toast('已刪除')}
-
-async function loadSalary(){
-  const {data,error}=await sb.from('salary').select('*').order('id',{ascending:false});
-  const el=document.getElementById('salary-list');
-  if(error||!data.length){el.innerHTML='<div class="empty">'+(error?'載入失敗':'尚無薪資發放紀錄')+'</div>';return}
-  el.innerHTML='<table><thead><tr><th>發放月份</th><th>總金額</th><th>備註</th><th></th></tr></thead><tbody>'+
-  data.map(s=>`<tr><td>${s.month}</td><td>${fmt(s.total)}</td><td style="color:var(--text3);font-size:12px">${s.note||'-'}</td><td><button class="del-btn" onclick="delSalary(${s.id})">🗑</button></td></tr>`).join('')+'</tbody></table>';
-}
-async function addSalary(){
-  const month=document.getElementById('sal-month').value;
-  if(!month){toast('請選擇月份');return}
-  const btn=document.getElementById('btn-salary');btn.disabled=true;btn.textContent='儲存中...';
-  const {error}=await sb.from('salary').insert({month,total:171039,note:document.getElementById('sal-note').value});
-  btn.disabled=false;btn.textContent='✓ 登記發放';
-  if(error){toast('❌ 儲存失敗（此月份可能已登記）');return}
-  toast('✓ 薪資發放已登記');document.getElementById('sal-note').value='';loadSalary();
-}
-async function delSalary(id){if(!confirm('確定刪除？'))return;await sb.from('salary').delete().eq('id',id);loadSalary();toast('已刪除')}
-
-const fxNames={rent_linkou:'房租－林口',rent_guishan:'房租－龜山（年繳）',petty_chen:'零用金－陳建隆',petty_liu:'零用金－劉育瑋',insurance:'勞健保勞退',printer:'影印機費',other:'其他'};
-async function loadFixed(){
-  const {data,error}=await sb.from('fixed_expenses').select('*').order('id',{ascending:false});
-  const el=document.getElementById('fixed-list');
-  if(error||!data.length){el.innerHTML='<div class="empty">'+(error?'載入失敗':'尚無固定支出紀錄')+'</div>';return}
-  el.innerHTML='<table><thead><tr><th>日期</th><th>項目</th><th>金額</th><th>備註</th><th></th></tr></thead><tbody>'+
-  data.map(f=>`<tr><td>${fmtDate(f.date)}</td><td>${fxNames[f.type]||f.type}</td><td>${fmt(f.amount)}</td><td style="color:var(--text3);font-size:12px">${f.note||'-'}</td><td><button class="del-btn" onclick="delFixed(${f.id})">🗑</button></td></tr>`).join('')+'</tbody></table>';
-}
-async function addFixed(){
-  const amount=parseFloat(document.getElementById('fx-amount').value)||0;
-  if(!amount){toast('請填寫金額');return}
-  const btn=document.getElementById('btn-fixed');btn.disabled=true;btn.textContent='儲存中...';
-  const {error}=await sb.from('fixed_expenses').insert({type:document.getElementById('fx-type').value,date:document.getElementById('fx-date').value,amount,note:document.getElementById('fx-note').value});
-  btn.disabled=false;btn.textContent='✓ 儲存紀錄';
-  if(error){toast('❌ 儲存失敗');return}
-  toast('✓ 固定支出已儲存');document.getElementById('fx-amount').value='';document.getElementById('fx-note').value='';loadFixed();
-}
-async function delFixed(id){if(!confirm('確定刪除？'))return;await sb.from('fixed_expenses').delete().eq('id',id);loadFixed();toast('已刪除')}
-
-async function loadXiaoliu(){
-  const {data,error}=await sb.from('xiaoliu').select('*').order('id',{ascending:false});
-  const el=document.getElementById('xiaoliu-list');
-  if(error||!data.length){el.innerHTML='<div class="empty">'+(error?'載入失敗':'尚無收款紀錄')+'</div>';return}
-  el.innerHTML='<table><thead><tr><th>月份</th><th>收款日</th><th>金額</th><th>備註</th><th></th></tr></thead><tbody>'+
-  data.map(x=>`<tr><td>${x.month}</td><td>${fmtDate(x.date)}</td><td>${fmt(x.amount)}</td><td style="color:var(--text3);font-size:12px">${x.note||'-'}</td><td><button class="del-btn" onclick="delXiaoliu(${x.id})">🗑</button></td></tr>`).join('')+'</tbody></table>';
-}
-async function addXiaoliu(){
-  const month=document.getElementById('xl-month').value,amount=parseFloat(document.getElementById('xl-amount').value)||0;
-  if(!month||!amount){toast('請填寫月份與金額');return}
-  const btn=document.getElementById('btn-xiaoliu');btn.disabled=true;btn.textContent='儲存中...';
-  const {error}=await sb.from('xiaoliu').insert({month,date:document.getElementById('xl-date').value,amount,note:document.getElementById('xl-note').value});
-  btn.disabled=false;btn.textContent='✓ 儲存收款';
-  if(error){toast('❌ 儲存失敗');return}
-  toast('✓ 小劉收款已儲存');document.getElementById('xl-note').value='';loadXiaoliu();
-}
-async function delXiaoliu(id){if(!confirm('確定刪除？'))return;await sb.from('xiaoliu').delete().eq('id',id);loadXiaoliu();toast('已刪除')}
-
-// ── REPORT ──
-let allData={orders:[],workers:[],materials:[],salary:[],fixed:[],xiaoliu:[]};
-async function fetchAllData(){
-  const [o,w,m,s,f,x]=await Promise.all([
-    sb.from('orders').select('*').order('id',{ascending:false}),
-    sb.from('workers').select('*').order('id',{ascending:false}),
-    sb.from('materials').select('*').order('id',{ascending:false}),
-    sb.from('salary').select('*').order('id',{ascending:false}),
-    sb.from('fixed_expenses').select('*').order('id',{ascending:false}),
-    sb.from('xiaoliu').select('*').order('id',{ascending:false})
-  ]);
-  allData={orders:o.data||[],workers:w.data||[],materials:m.data||[],salary:s.data||[],fixed:f.data||[],xiaoliu:x.data||[]};
-  return allData;
-}
-async function renderReport(){
-  const sel=document.getElementById('report-month-sel');
-  const d=await fetchAllData();
-  const months=new Set([curM]);
-  [...d.orders,...d.workers,...d.materials,...d.salary,...d.fixed,...d.xiaoliu].forEach(r=>{
-    const mo=r.month||(r.date?r.date.substring(0,7):null);if(mo)months.add(mo);
-  });
-  const sorted=[...months].sort().reverse();
-  const prev=sel.value;
-  sel.innerHTML=sorted.map(mo=>`<option value="${mo}">${mo}</option>`).join('');
-  if(prev&&sorted.includes(prev))sel.value=prev;
-  const mon=sel.value;
-  const orders=d.orders.filter(r=>(r.date||'').startsWith(mon));
-  const totalOrders=orders.reduce((a,b)=>a+(b.amount||0),0);
-  const xlIncome=d.xiaoliu.filter(r=>r.month===mon).reduce((a,b)=>a+(b.amount||0),0);
-  const workerExp=d.workers.filter(r=>r.month===mon).reduce((a,b)=>a+(b.amount||0),0);
-  const matExp=d.materials.filter(r=>r.month===mon||(r.date||'').startsWith(mon)).reduce((a,b)=>a+(b.amount||0),0);
-  const salExp=d.salary.find(r=>r.month===mon)?171039:0;
-  const fxExp=d.fixed.filter(r=>(r.date||'').startsWith(mon)).reduce((a,b)=>a+(b.amount||0),0);
-  const totalIncome=totalOrders+xlIncome,totalExp=workerExp+matExp+salExp+fxExp,net=totalIncome-totalExp;
-  document.getElementById('report-content').innerHTML=`
-  <div class="report-metrics">
-    <div class="metric"><div class="metric-label">總收入</div><div class="metric-value income">${fmt(totalIncome)}</div></div>
-    <div class="metric"><div class="metric-label">總支出</div><div class="metric-value expense">${fmt(totalExp)}</div></div>
-    <div class="metric"><div class="metric-label">本月結餘</div><div class="metric-value" style="color:${net>=0?'var(--green)':'var(--red)'}">${fmt(net)}</div></div>
+<div class="modal-overlay" id="confirmModal">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <p id="confirmMsg"></p>
+    <div class="modal-actions">
+      <button class="btn-ghost" style="flex:1;" onclick="closeConfirm(false)">取消</button>
+      <button class="btn-primary" style="background:var(--red);color:#fff;" onclick="closeConfirm(true)">確定刪除</button>
+    </div>
   </div>
-  <div class="section-title">收入明細</div>
-  <div class="report-item"><span>客戶訂單</span><span class="income">${fmt(totalOrders)}</span></div>
-  <div class="report-item"><span>小劉月收款</span><span class="income">${fmt(xlIncome)}</span></div>
-  <div class="report-total"><span>收入合計</span><span class="income">${fmt(totalIncome)}</span></div>
-  <div class="divider"></div>
-  <div class="section-title">支出明細</div>
-  <div class="report-item"><span>薪資發放</span><span class="expense">${salExp?fmt(salExp):'<span style="color:var(--text3)">未登記</span>'}</span></div>
-  <div class="report-item"><span>工人安裝費</span><span class="expense">${fmt(workerExp)}</span></div>
-  <div class="report-item"><span>材料貨款（永騏）</span><span class="expense">${fmt(matExp)}</span></div>
-  <div class="report-item"><span>固定支出</span><span class="expense">${fmt(fxExp)}</span></div>
-  <div class="report-total"><span>支出合計</span><span class="expense">${fmt(totalExp)}</span></div>`;
+</div>
+
+<div class="modal-overlay" id="pinModal">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <p id="pinModalTitle" style="font-weight:900;margin-bottom:2px;"></p>
+    <p id="pinModalDesc" style="font-size:12.5px;color:var(--ink-soft);"></p>
+    <input type="password" inputmode="numeric" id="pinInput" placeholder="請輸入密碼" style="margin-bottom:8px;">
+    <input type="password" inputmode="numeric" id="pinInput2" placeholder="再輸入一次確認" style="display:none;margin-bottom:8px;">
+    <p id="pinError" style="color:var(--red);font-size:12px;display:none;margin:0 0 8px;"></p>
+    <div class="modal-actions">
+      <button class="btn-ghost" style="flex:1;" onclick="closePinModal()">取消</button>
+      <button class="btn-primary" onclick="submitPinModal()">確認</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============== Supabase connection ==============
+   The anon/publishable key below is DESIGNED to be public — Supabase's
+   security model relies on Row Level Security policies (already set up),
+   not on hiding this key. */
+const SUPABASE_URL = 'https://nwjtbbnsepmdlpqxfpmt.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_0JGW8ek-R-Ww05A6cxXHxw_BYv8DSWG';
+const PHOTOS_BUCKET = 'photos';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const ENTRIES_KEY = 'billing-entries';
+const PIN_KEY = 'admin-pin';
+let entries = [];
+let editingId = null;
+let expandedPhotoIds = {};
+let filterPaid = 'all';
+let isUnlocked = false;
+let adminPin = null;
+let pinModalMode = 'enter';
+
+function uid(){ return 'e' + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+function todayStr(){ return new Date().toISOString().slice(0,10); }
+function fmtMoney(n){ return (Number(n)||0).toLocaleString('zh-TW'); }
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(()=>t.classList.remove('show'), 1800);
+}
+function openLightbox(src){
+  document.getElementById('lightboxImg').src = src;
+  document.getElementById('lightbox').classList.add('show');
+}
+function closeLightbox(){ document.getElementById('lightbox').classList.remove('show'); }
+function showConnError(msg){
+  document.getElementById('connErrorMsg').textContent = msg;
+  document.getElementById('connError').style.display = 'block';
 }
 
-// ── EXCEL EXPORT ──
-let exportMode='full'; // 'full' or single sheet
-function showExportModal(){
-  exportMode='full';
-  document.getElementById('export-modal-sub').textContent='選擇要匯出的工作表：';
-  document.getElementById('export-options').style.display='grid';
-  document.querySelectorAll('#export-options input').forEach(cb=>cb.checked=true);
-  document.getElementById('export-modal').classList.add('show');
+/* ---------------- custom confirm ---------------- */
+let _confirmResolve = null;
+function showConfirm(msg){
+  document.getElementById('confirmMsg').textContent = msg;
+  document.getElementById('confirmModal').classList.add('show');
+  return new Promise(resolve => { _confirmResolve = resolve; });
 }
-function exportExcel(sheet){
-  exportMode=sheet;
-  document.getElementById('export-modal-sub').textContent='將匯出「'+sheetLabel(sheet)+'」的所有資料';
-  document.getElementById('export-options').style.display='none';
-  document.getElementById('export-modal').classList.add('show');
+function closeConfirm(result){
+  document.getElementById('confirmModal').classList.remove('show');
+  if(_confirmResolve) _confirmResolve(result);
+  _confirmResolve = null;
 }
-function sheetLabel(s){return{orders:'客戶訂單',workers:'工人費用',materials:'材料貨款',salary:'薪資發放',fixed:'固定支出',xiaoliu:'小劉月收',summary:'月收支摘要'}[s]||s}
-function closeModal(){document.getElementById('export-modal').classList.remove('show')}
-function closeModalOutside(e){if(e.target===document.getElementById('export-modal'))closeModal()}
 
-async function doExportExcel(){
-  const btn=document.getElementById('btn-export-confirm');
-  btn.disabled=true;btn.textContent='處理中...';
-  toast('正在準備 Excel 檔案...');
-  await fetchAllData();
-  const wb=XLSX.utils.book_new();
-  const sheets=exportMode==='full'
-    ?[...document.querySelectorAll('#export-options input:checked')].map(cb=>cb.value)
-    :[exportMode];
+/* ---------------- key/value store on Supabase (table: app_kv) ---------------- */
+async function kvGet(key){
+  const { data, error } = await sb.from('app_kv').select('value').eq('key', key).maybeSingle();
+  if(error) throw error;
+  return data ? data.value : null;
+}
+async function kvSet(key, value){
+  const { error } = await sb.from('app_kv').upsert({ key, value, updated_at: new Date().toISOString() });
+  if(error) throw error;
+}
 
-  const payLabel={check:'支票',transfer:'匯款',cash:'現金'};
-  const invLabel={yes:'有發票',no:'無發票'};
+/* ---------------- PIN lock: gates payment-status toggling AND all price figures ---------------- */
+async function loadAdminPin(){
+  try{
+    const v = await kvGet(PIN_KEY);
+    adminPin = (typeof v === 'string') ? v : '';
+  }catch(e){ adminPin = ''; }
+  if(!adminPin){
+    adminPin = '0000';
+    try{ await kvSet(PIN_KEY, adminPin); }catch(e){}
+  }
+}
+function openPinModal(){
+  pinModalMode = adminPin ? 'enter' : 'set';
+  document.getElementById('pinInput').value = '';
+  document.getElementById('pinInput2').value = '';
+  document.getElementById('pinInput2').style.display = pinModalMode==='set' ? 'block' : 'none';
+  document.getElementById('pinError').style.display = 'none';
+  if(pinModalMode==='set'){
+    document.getElementById('pinModalTitle').textContent = '設定管理密碼';
+    document.getElementById('pinModalDesc').textContent = '設定後，之後只有輸入正確密碼才能查看金額及勾選請款狀態。';
+    document.getElementById('pinInput').placeholder = '設定密碼';
+  }else{
+    document.getElementById('pinModalTitle').textContent = '輸入管理密碼';
+    document.getElementById('pinModalDesc').textContent = '查看/填寫金額、勾選請款狀態為管理者專屬功能。';
+    document.getElementById('pinInput').placeholder = '請輸入密碼';
+  }
+  document.getElementById('pinModal').classList.add('show');
+  setTimeout(()=>document.getElementById('pinInput').focus(), 50);
+}
+function openChangePinModal(){
+  pinModalMode = 'change';
+  document.getElementById('pinInput').value = '';
+  document.getElementById('pinInput2').style.display = 'none';
+  document.getElementById('pinError').style.display = 'none';
+  document.getElementById('pinModalTitle').textContent = '變更管理密碼';
+  document.getElementById('pinModalDesc').textContent = '設定新的管理密碼給自己使用。';
+  document.getElementById('pinInput').placeholder = '新密碼';
+  document.getElementById('pinModal').classList.add('show');
+  setTimeout(()=>document.getElementById('pinInput').focus(), 50);
+}
+function closePinModal(){ document.getElementById('pinModal').classList.remove('show'); }
+function showPinError(msg){
+  const el = document.getElementById('pinError');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+function onUnlockedStateChanged(){
+  renderLockRow();
+  if(document.getElementById('entriesContainer')) renderEntriesOnly(currentSearch());
+  if(document.getElementById('tabAdd').classList.contains('active')) renderAddView();
+  renderTotals();
+}
+async function submitPinModal(){
+  const v1 = document.getElementById('pinInput').value;
+  if(pinModalMode === 'set'){
+    const v2 = document.getElementById('pinInput2').value;
+    if(!v1){ showPinError('請輸入密碼'); return; }
+    if(v1 !== v2){ showPinError('兩次輸入的密碼不一致'); return; }
+    adminPin = v1;
+    try{ await kvSet(PIN_KEY, adminPin); }catch(e){ showPinError('密碼儲存失敗，請檢查網路'); return; }
+    isUnlocked = true;
+    closePinModal();
+    onUnlockedStateChanged();
+    showToast('密碼已設定，目前已解鎖');
+  }else if(pinModalMode === 'change'){
+    if(!v1){ showPinError('請輸入新密碼'); return; }
+    adminPin = v1;
+    try{ await kvSet(PIN_KEY, adminPin); }catch(e){ showPinError('密碼儲存失敗，請檢查網路'); return; }
+    closePinModal();
+    showToast('管理密碼已更新');
+  }else{
+    if(v1 === adminPin){
+      isUnlocked = true;
+      closePinModal();
+      onUnlockedStateChanged();
+      showToast('已解鎖');
+    }else{
+      showPinError('密碼錯誤，請再試一次');
+    }
+  }
+}
+function toggleLock(){
+  if(isUnlocked){
+    isUnlocked = false;
+    onUnlockedStateChanged();
+    showToast('已重新鎖定');
+  }else{
+    openPinModal();
+  }
+}
+function currentSearch(){
+  const el = document.getElementById('searchBox');
+  return el ? el.value : '';
+}
 
-  if(sheets.includes('orders')){
-    const rows=[['日期','客戶名稱','金額','發票','付款方式','收款狀態','備註','入帳方向']];
-    allData.orders.forEach(o=>{
-      let dir='';
-      if(o.invoice==='yes') dir=o.payment==='transfer'?'公司銀行（注意手續費）':'存入公司戶';
-      else dir=o.payment==='cash'?'存入金庫':'存入陳建隆戶';
-      rows.push([o.date||'',o.client||'',o.amount||0,invLabel[o.invoice]||'',payLabel[o.payment]||'',o.status==='paid'?'已收款':'未收款',o.note||'',dir]);
+/* ---------------- meter number ---------------- */
+function padMeter(v){
+  const s = String(v==null ? '' : v).trim();
+  if(/^[0-9]+$/.test(s) && s.length > 0 && s.length < 11) return s.padStart(11,'0');
+  return s;
+}
+
+/* ---------------- entries storage ---------------- */
+async function loadEntries(){
+  const v = await kvGet(ENTRIES_KEY);
+  entries = Array.isArray(v) ? v : [];
+}
+async function saveEntries(){
+  await kvSet(ENTRIES_KEY, entries);
+}
+
+/* ---------------- photo upload (Supabase Storage) ---------------- */
+function compressImageToBlob(file){
+  return new Promise((resolve, reject)=>{
+    const reader = new FileReader();
+    reader.onerror = reject;
+    reader.onload = ()=>{
+      const img = new Image();
+      img.onerror = reject;
+      img.onload = ()=>{
+        const maxDim = 1100;
+        let w = img.width, h = img.height;
+        if(w > h && w > maxDim){ h = Math.round(h*maxDim/w); w = maxDim; }
+        else if(h > maxDim){ w = Math.round(w*maxDim/h); h = maxDim; }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img,0,0,w,h);
+        canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('compress failed')), 'image/jpeg', 0.62);
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+async function uploadOnePhoto(entryId, stage, file){
+  const blob = await compressImageToBlob(file);
+  const fileName = `${entryId}/${stage}/${Date.now()}_${Math.random().toString(36).slice(2,7)}.jpg`;
+  const { error } = await sb.storage.from(PHOTOS_BUCKET).upload(fileName, blob, { contentType:'image/jpeg', upsert:false });
+  if(error) throw error;
+  const { data } = sb.storage.from(PHOTOS_BUCKET).getPublicUrl(fileName);
+  return { path: fileName, url: data.publicUrl };
+}
+async function deleteStoredPhotos(paths){
+  if(!paths || paths.length===0) return;
+  try{ await sb.storage.from(PHOTOS_BUCKET).remove(paths); }catch(e){ /* non-fatal */ }
+}
+
+/* ---------------- form state ---------------- */
+function emptyChecks(){
+  return {
+    netLocation:{ok:'',note:''},
+    phaseLocation:{ok:'',note:''},
+    ct:{ok:'',lines:'',ratio:'',note:''},
+    meterPower:{ok:'',note:''}
+  };
+}
+const ITEM_PRESETS = ['維護','新設'];
+function emptyForm(){
+  return {
+    id: uid(), date: todayStr(), workOrder:'', meterNo:'', siteName:'', address:'',
+    item:'維護', itemCustomMode:false, itemCustomText:'',
+    untaxed:'', tax:'', taxed:'', note:'',
+    status:'施工中',
+    photos:{before:[],during:[],after:[]},
+    checks: emptyChecks()
+  };
+}
+function mergeChecks(base, override){
+  const out = {};
+  for(const k in base){ out[k] = {...base[k], ...((override && override[k]) ? override[k] : {})}; }
+  return out;
+}
+let form = emptyForm();
+
+function syncFormFromDOM(){
+  const g = id => document.getElementById(id);
+  if(g('f_date')) form.date = g('f_date').value;
+  if(g('f_workOrder')) form.workOrder = g('f_workOrder').value;
+  if(g('f_meterNo')) form.meterNo = g('f_meterNo').value;
+  if(g('f_siteName')) form.siteName = g('f_siteName').value;
+  if(g('f_address')) form.address = g('f_address').value;
+  if(g('f_itemCustom')) form.itemCustomText = g('f_itemCustom').value;
+  if(g('f_untaxed')) form.untaxed = g('f_untaxed').value;
+  if(g('f_tax')) form.tax = g('f_tax').value;
+  if(g('f_taxed')) form.taxed = g('f_taxed').value;
+  if(g('f_note')) form.note = g('f_note').value;
+}
+
+function calcTax(){
+  const uEl = document.getElementById('f_untaxed');
+  if(!uEl) return;
+  form.untaxed = uEl.value;
+  const u = parseFloat(uEl.value);
+  if(!isNaN(u)){
+    const tax = Math.round(u*0.05);
+    form.tax = String(tax);
+    form.taxed = String(u+tax);
+    document.getElementById('f_tax').value = tax;
+    document.getElementById('f_taxed').value = u + tax;
+  }
+}
+
+function setStatus(s){ form.status = s; renderStatusToggle(); }
+function renderStatusToggle(){
+  const el = document.getElementById('statusToggle');
+  if(!el) return;
+  el.innerHTML = `
+    <div class="status-opt ${form.status==='施工中'?'sel-red':''}" onclick="setStatus('施工中')">🔴 施工中</div>
+    <div class="status-opt ${form.status==='已完工'?'sel-green':''}" onclick="setStatus('已完工')">🟢 已完工</div>
+  `;
+}
+
+/* ---------------- 項目：維護／新設／自行輸入 ---------------- */
+function onItemSelectChange(v){
+  if(v==='__custom__'){ form.itemCustomMode = true; }
+  else{ form.itemCustomMode = false; form.item = v; }
+  const el = document.getElementById('itemFieldExtra');
+  if(el) el.innerHTML = renderItemCustomInput();
+  if(form.itemCustomMode){
+    setTimeout(()=>{ const inp = document.getElementById('f_itemCustom'); if(inp) inp.focus(); }, 30);
+  }
+}
+function renderItemCustomInput(){
+  if(!form.itemCustomMode) return '';
+  return `<input type="text" id="f_itemCustom" placeholder="請輸入項目名稱" value="${escAttr(form.itemCustomText)}" oninput="form.itemCustomText=this.value" style="margin-top:8px;">`;
+}
+function renderItemField(){
+  return `
+    <div class="field">
+      <label>項目</label>
+      <select id="f_item" onchange="onItemSelectChange(this.value)">
+        <option value="維護" ${(!form.itemCustomMode && form.item==='維護')?'selected':''}>維護</option>
+        <option value="新設" ${(!form.itemCustomMode && form.item==='新設')?'selected':''}>新設</option>
+        <option value="__custom__" ${form.itemCustomMode?'selected':''}>其他（自行輸入）</option>
+      </select>
+      <div id="itemFieldExtra">${renderItemCustomInput()}</div>
+    </div>
+  `;
+}
+
+/* ---------------- check items ---------------- */
+function setCheck(key, field, val){
+  form.checks[key][field] = val;
+  if(field==='ok') updateCheckToggleUI(key);
+}
+function updateCheckToggleUI(key){
+  const el = document.getElementById('checktoggle_'+key);
+  if(!el) return;
+  const c = form.checks[key];
+  el.querySelectorAll('.ci-btn').forEach(btn=>btn.classList.remove('sel-green','sel-red'));
+  const oBtn = el.querySelector('[data-v="O"]');
+  const xBtn = el.querySelector('[data-v="X"]');
+  if(c.ok==='O' && oBtn) oBtn.classList.add('sel-green');
+  if(c.ok==='X' && xBtn) xBtn.classList.add('sel-red');
+}
+function renderCheckToggle(key){
+  const c = form.checks[key];
+  return `
+    <div class="ci-toggle" id="checktoggle_${key}">
+      <button type="button" class="ci-btn ${c.ok==='O'?'sel-green':''}" data-v="O" onclick="setCheck('${key}','ok','O')">O</button>
+      <button type="button" class="ci-btn ${c.ok==='X'?'sel-red':''}" data-v="X" onclick="setCheck('${key}','ok','X')">X</button>
+    </div>
+  `;
+}
+function renderSimpleCheck(key, label, placeholder){
+  const c = form.checks[key];
+  return `
+    <div class="check-item">
+      <div class="check-item-head">
+        <span class="ci-label">${label}</span>
+        ${renderCheckToggle(key)}
+      </div>
+      <input type="text" class="ci-note" placeholder="${placeholder}" value="${escAttr(c.note)}" oninput="form.checks.${key}.note=this.value">
+    </div>
+  `;
+}
+function renderCTCheck(){
+  const c = form.checks.ct;
+  return `
+    <div class="check-item">
+      <div class="check-item-head">
+        <span class="ci-label">三線CT</span>
+        ${renderCheckToggle('ct')}
+      </div>
+      <div class="ci-row2">
+        <input type="text" inputmode="numeric" placeholder="線數，例：3" value="${escAttr(c.lines)}" oninput="form.checks.ct.lines=this.value">
+        <input type="text" inputmode="numeric" placeholder="倍率，例：100" value="${escAttr(c.ratio)}" oninput="form.checks.ct.ratio=this.value">
+      </div>
+      <input type="text" class="ci-note" placeholder="例：單向/三相" value="${escAttr(c.note)}" oninput="form.checks.ct.note=this.value">
+    </div>
+  `;
+}
+
+/* ---------------- photo stages ---------------- */
+const STAGES = [{key:'before',label:'施工前照片',dot:'before'},{key:'during',label:'施工中照片',dot:'during'},{key:'after',label:'完工照片',dot:'after'}];
+
+function renderPhotoGridInner(stageKey){
+  const items = form.photos[stageKey] || [];
+  return `
+    ${items.map((p,i)=>`
+      <div class="photo-thumb">
+        <img src="${p.url}" onclick="openLightbox('${p.url}')">
+        <div class="rm" onclick="removePhoto('${stageKey}',${i})">✕</div>
+      </div>
+    `).join('')}
+    <label class="photo-add">
+      ＋<span>拍照/選圖</span>
+      <input type="file" accept="image/*" capture="environment" multiple onchange="handlePhotoUpload('${stageKey}', this)">
+    </label>
+  `;
+}
+function updatePhotoStageDOM(stageKey){
+  const grid = document.getElementById('grid_'+stageKey);
+  if(grid) grid.innerHTML = renderPhotoGridInner(stageKey);
+  const countEl = document.getElementById('count_'+stageKey);
+  if(countEl) countEl.textContent = (form.photos[stageKey]||[]).length;
+}
+function renderPhotoStages(){
+  return STAGES.map(s => `
+    <div class="photo-stage">
+      <div class="photo-stage-head">
+        <span class="lbl"><span class="dot ${s.dot}"></span>${s.label}<span class="hint" id="count_${s.key}">（${(form.photos[s.key]||[]).length}）</span></span>
+      </div>
+      <div class="photo-grid" id="grid_${s.key}">${renderPhotoGridInner(s.key)}</div>
+    </div>
+  `).join('');
+}
+async function handlePhotoUpload(stage, input){
+  const files = Array.from(input.files || []);
+  input.value = '';
+  if(files.length === 0) return;
+  let done = 0;
+  showToast(`上傳中... (0/${files.length})`);
+  for(const f of files){
+    try{
+      const photo = await uploadOnePhoto(form.id, stage, f);
+      form.photos[stage].push(photo);
+      done++;
+      updatePhotoStageDOM(stage);
+      showToast(`上傳中... (${done}/${files.length})`);
+    }catch(err){
+      showToast('照片上傳失敗，請檢查網路連線');
+    }
+  }
+  if(stage === 'after' && form.photos.after.length > 0){
+    form.status = '已完工';
+    renderStatusToggle();
+  }
+  if(done > 0) showToast(`已上傳 ${done} 張照片`);
+}
+async function removePhoto(stage, idx){
+  const photo = form.photos[stage][idx];
+  form.photos[stage].splice(idx,1);
+  updatePhotoStageDOM(stage);
+  if(photo && photo.path) await deleteStoredPhotos([photo.path]);
+}
+
+/* ---------------- main add/edit form ---------------- */
+function renderAmountSection(){
+  if(!isUnlocked){
+    return `
+      <div class="amt-locked">
+        <div class="msg">🔒 金額欄位僅管理者可填寫</div>
+        <button class="btn-ghost" style="width:100%;" onclick="openPinModal()">輸入密碼解鎖</button>
+      </div>
+    `;
+  }
+  return `
+    <div class="amt-box">
+      <div class="field" style="margin-bottom:0;">
+        <label>請款金額（未稅）<span class="hint">輸入後自動試算稅額 5%</span></label>
+        <input type="number" inputmode="decimal" id="f_untaxed" class="num-input" placeholder="0" value="${form.untaxed}" oninput="calcTax()">
+      </div>
+      <div class="row2">
+        <div class="field" style="margin-bottom:0;">
+          <label>稅額</label>
+          <input type="number" inputmode="decimal" id="f_tax" class="num-input" placeholder="0" value="${form.tax}" oninput="form.tax=this.value">
+        </div>
+        <div class="field" style="margin-bottom:0;">
+          <label>請款金額（含稅）</label>
+          <input type="number" inputmode="decimal" id="f_taxed" class="num-input" placeholder="0" value="${form.taxed}" oninput="form.taxed=this.value">
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderAddView(){
+  const isEdit = editingId !== null;
+  const el = document.getElementById('viewAdd');
+  el.innerHTML = `
+    <div class="card">
+      <p class="card-title"><span class="tag">${isEdit ? 'EDIT' : 'NEW'}</span>${isEdit ? '編輯請款資料' : '新增一筆請款'}</p>
+
+      <div class="field">
+        <label>案場狀態</label>
+        <div class="status-toggle" id="statusToggle"></div>
+      </div>
+
+      <div class="field">
+        <label>日期</label>
+        <input type="date" id="f_date" value="${form.date}" oninput="form.date=this.value">
+      </div>
+
+      <div class="row2">
+        <div class="field">
+          <label>派工單號 / 工名</label>
+          <input type="text" id="f_workOrder" class="mono" placeholder="XOA12025..." value="${escAttr(form.workOrder)}" oninput="form.workOrder=this.value">
+        </div>
+        <div class="field">
+          <label>台電電號<span class="hint">會自動補齊為 11 碼</span></label>
+          <input type="text" inputmode="numeric" id="f_meterNo" class="mono" placeholder="00567322103" value="${escAttr(form.meterNo)}" oninput="form.meterNo=this.value">
+        </div>
+      </div>
+
+      <div class="field">
+        <label>案場名稱</label>
+        <input type="text" id="f_siteName" placeholder="例：泰晶殿" value="${escAttr(form.siteName)}" oninput="form.siteName=this.value">
+      </div>
+
+      <div class="field">
+        <label>施工地址</label>
+        <input type="text" id="f_address" placeholder="台中市...路...號" value="${escAttr(form.address)}" oninput="form.address=this.value">
+      </div>
+
+      ${renderItemField()}
+
+      <div id="amtSection">${renderAmountSection()}</div>
+
+      <p class="card-subtitle">現場確認</p>
+
+      ${renderSimpleCheck('netLocation', '現場網路連接位置', '例：分享器在櫃台後方/連接今時路由器')}
+      ${renderSimpleCheck('phaseLocation', '三相電連接位置', '例：空的斷路器/休息區冷氣斷路器')}
+      ${renderCTCheck()}
+      ${renderSimpleCheck('meterPower', '電表能不能開機', '例：N相110V/220V才能開機')}
+
+      <div class="field">
+        <label>備註<span class="hint">選填</span></label>
+        <textarea id="f_note" placeholder="例：客戶wifi後改客戶端有問題" oninput="form.note=this.value">${escHtml(form.note)}</textarea>
+      </div>
+
+      <div class="field" style="margin-bottom:4px;">
+        <label>現場照片</label>
+      </div>
+      ${renderPhotoStages()}
+
+      <div class="btn-row">
+        <button class="btn-primary" onclick="submitForm()">${isEdit ? '儲存修改' : '新增這筆'}</button>
+        ${isEdit ? '<button class="btn-ghost" onclick="cancelEdit()">取消</button>' : ''}
+      </div>
+    </div>
+  `;
+  renderStatusToggle();
+}
+
+async function submitForm(){
+  syncFormFromDOM();
+  if(!form.siteName || !form.siteName.trim()){
+    showToast('請至少填寫案場名稱');
+    return;
+  }
+  form.meterNo = padMeter(form.meterNo);
+  const finalItem = form.itemCustomMode ? ((form.itemCustomText||'').trim() || '其他') : form.item;
+  const data = {
+    id: form.id,
+    date: form.date || todayStr(),
+    workOrder: form.workOrder.trim(),
+    meterNo: form.meterNo,
+    siteName: form.siteName.trim(),
+    address: form.address.trim(),
+    item: finalItem,
+    note: form.note.trim(),
+    status: form.status,
+    checks: JSON.parse(JSON.stringify(form.checks)),
+    photos: JSON.parse(JSON.stringify(form.photos)),
+  };
+  if(isUnlocked){
+    data.untaxed = form.untaxed;
+    data.tax = form.tax;
+    data.taxed = form.taxed;
+  }
+  if(editingId){
+    const idx = entries.findIndex(e=>e.id===editingId);
+    if(idx>-1) entries[idx] = {...entries[idx], ...data};
+    showToast('已儲存修改');
+    editingId = null;
+  }else{
+    entries.push({createdAt: Date.now(), paid:false, untaxed:'', tax:'', taxed:'', ...data});
+    showToast('已新增一筆請款');
+  }
+  await saveEntries();
+  form = emptyForm();
+  renderAddView();
+  renderTotals();
+  renderList();
+  switchTab('list');
+}
+
+function cancelEdit(){
+  editingId = null;
+  form = emptyForm();
+  renderAddView();
+}
+
+async function editEntry(id){
+  const e = entries.find(x=>x.id===id);
+  if(!e) return;
+  editingId = id;
+  const base = emptyForm();
+  const isPreset = ITEM_PRESETS.includes(e.item);
+  form = {
+    ...base, ...e,
+    id: e.id,
+    item: isPreset ? e.item : '維護',
+    itemCustomMode: !isPreset,
+    itemCustomText: isPreset ? '' : (e.item || ''),
+    photos: {
+      before:[...((e.photos&&e.photos.before)||[])],
+      during:[...((e.photos&&e.photos.during)||[])],
+      after:[...((e.photos&&e.photos.after)||[])],
+    },
+    checks: mergeChecks(base.checks, e.checks)
+  };
+  switchTab('add');
+  renderAddView();
+}
+
+async function deleteEntry(id){
+  const ok = await showConfirm('確定要刪除這筆請款資料嗎？照片也會一併刪除，此動作無法復原。');
+  if(!ok) return;
+  const e = entries.find(x=>x.id===id);
+  entries = entries.filter(x=>x.id!==id);
+  await saveEntries();
+  if(e && e.photos){
+    const paths = [];
+    ['before','during','after'].forEach(k=>(e.photos[k]||[]).forEach(p=>{ if(p && p.path) paths.push(p.path); }));
+    await deleteStoredPhotos(paths);
+  }
+  delete expandedPhotoIds[id];
+  renderTotals();
+  renderList(currentSearch());
+  showToast('已刪除');
+}
+
+function togglePhotoView(id){
+  expandedPhotoIds[id] = !expandedPhotoIds[id];
+  renderEntriesOnly(currentSearch());
+}
+
+async function togglePaid(id){
+  if(!isUnlocked){
+    showToast('請款狀態為管理者專屬功能，請先解鎖');
+    openPinModal();
+    return;
+  }
+  const idx = entries.findIndex(e=>e.id===id);
+  if(idx<0) return;
+  entries[idx].paid = !entries[idx].paid;
+  await saveEntries();
+  renderTotals();
+  renderEntriesOnly(currentSearch());
+  showToast(entries[idx].paid ? '已標記為「已請款」' : '已標記為「未請款」');
+}
+
+function setFilterPaid(v){
+  filterPaid = v;
+  renderFilterRow();
+  renderEntriesOnly(currentSearch());
+}
+
+/* ---------------- list view ---------------- */
+function chipClass(v){
+  if(v==='O') return 'ok';
+  if(v==='X') return 'bad';
+  return 'item';
+}
+function photoCounts(e){
+  const p = e.photos || {before:[],during:[],after:[]};
+  return { before:(p.before||[]).length, during:(p.during||[]).length, after:(p.after||[]).length };
+}
+function renderPhotoView(e){
+  if(!expandedPhotoIds[e.id]) return '';
+  const photos = e.photos || {before:[],during:[],after:[]};
+  return `
+    <div class="photo-view">
+      ${STAGES.map(s=>`
+        <div class="photo-view-stage">
+          <div class="lbl"><span class="dot ${s.dot}"></span>${s.label}（${(photos[s.key]||[]).length}）</div>
+          ${(photos[s.key]||[]).length ? `
+            <div class="photo-view-grid">
+              ${photos[s.key].map(p=>`<img src="${p.url}" onclick="openLightbox('${p.url}')">`).join('')}
+            </div>
+          ` : `<div class="photo-none">尚未上傳</div>`}
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+function ctChipText(c){
+  if(!c || !c.ct) return '三線CT -';
+  const ct = c.ct;
+  const parts = [];
+  if(ct.lines) parts.push(ct.lines+'線');
+  if(ct.ratio) parts.push(ct.ratio+'倍率');
+  const detail = parts.length ? ' '+parts.join('/') : '';
+  return `三線CT ${ct.ok || '-'}${detail}`;
+}
+function checkNoteLines(c){
+  if(!c) return [];
+  const lines = [];
+  if(c.netLocation && c.netLocation.note) lines.push('網路：'+c.netLocation.note);
+  if(c.phaseLocation && c.phaseLocation.note) lines.push('三相電：'+c.phaseLocation.note);
+  if(c.ct && c.ct.note) lines.push('三線CT：'+c.ct.note);
+  if(c.meterPower && c.meterPower.note) lines.push('開機：'+c.meterPower.note);
+  return lines;
+}
+
+function renderEntryCard(e){
+  const done = e.status === '已完工';
+  const paid = !!e.paid;
+  const pc = photoCounts(e);
+  const totalPhotos = pc.before + pc.during + pc.after;
+  const c = e.checks || {};
+  const noteLines = checkNoteLines(c);
+  const meterDisplay = padMeter(e.meterNo);
+  const idxNum = entries.length - entries.findIndex(x=>x.id===e.id);
+  return `
+    <div class="entry ${done?'is-done':''}">
+      <div class="entry-head">
+        <div>
+          <div class="entry-idx">#${idxNum} · ${e.date||''}
+            <span class="status-pill ${done?'green':'red'}">${done?'🟢 已完工':'🔴 施工中'}</span>
+          </div>
+          <div class="entry-site">${escHtml(e.siteName||'（未命名案場）')}</div>
+          ${e.address ? `<div class="entry-addr">${escHtml(e.address)}</div>` : ''}
+        </div>
+        <div class="entry-amt">
+          ${isUnlocked
+            ? `<div class="main">$${fmtMoney(e.taxed || e.untaxed)}</div><div class="sub">未稅 $${fmtMoney(e.untaxed)}</div>`
+            : `<div class="locked-tag">🔒 金額</div>`
+          }
+        </div>
+      </div>
+      <div class="entry-meta">
+        ${e.workOrder ? `<span>單號 ${escHtml(e.workOrder)}</span>` : ''}
+        ${meterDisplay ? `<span>電號 ${escHtml(meterDisplay)}</span>` : ''}
+      </div>
+      <div class="chips">
+        <span class="chip item">${escHtml(e.item||'—')}</span>
+        <span class="chip ${chipClass(c.netLocation&&c.netLocation.ok)}">網路 ${escHtml((c.netLocation&&c.netLocation.ok)||'-')}</span>
+        <span class="chip ${chipClass(c.phaseLocation&&c.phaseLocation.ok)}">三相電 ${escHtml((c.phaseLocation&&c.phaseLocation.ok)||'-')}</span>
+        <span class="chip ${chipClass(c.ct&&c.ct.ok)}">${escHtml(ctChipText(c))}</span>
+        <span class="chip ${chipClass(c.meterPower&&c.meterPower.ok)}">開機 ${escHtml((c.meterPower&&c.meterPower.ok)||'-')}</span>
+      </div>
+      ${e.note ? `<div class="entry-note">${escHtml(e.note)}</div>` : ''}
+      ${noteLines.length ? `<div class="entry-note">${noteLines.map(l=>escHtml(l)).join('<br>')}</div>` : ''}
+      <button class="pay-pill ${paid?'paid':'unpaid'} ${isUnlocked?'':'locked'}" onclick="togglePaid('${e.id}')">
+        ${paid ? '✅ 已請款' : '⬜ 未請款'}${isUnlocked?'':' 🔒'}
+      </button>
+      <div class="entry-actions">
+        <button class="icon-btn photos" onclick="togglePhotoView('${e.id}')">📷 照片 ${totalPhotos ? '('+totalPhotos+')' : ''} ${expandedPhotoIds[e.id]?'▲':'▼'}</button>
+        <button class="icon-btn download" onclick="downloadEntryPhotos('${e.id}')">📥 下載照片${totalPhotos ? ' ('+totalPhotos+')' : ''}</button>
+        <button class="icon-btn edit" onclick="editEntry('${e.id}')">✏️ 編輯</button>
+        <button class="icon-btn danger" onclick="deleteEntry('${e.id}')">🗑️ 刪除</button>
+      </div>
+      ${renderPhotoView(e)}
+    </div>
+  `;
+}
+
+function renderLockRow(){
+  const el = document.getElementById('lockRow');
+  if(!el) return;
+  el.innerHTML = `
+    <button class="lock-btn ${isUnlocked?'unlocked':''}" onclick="toggleLock()">${isUnlocked ? '🔓 已解鎖（點擊重新鎖定）' : '🔒 已鎖定（點擊輸入密碼解鎖）'}</button>
+    ${isUnlocked ? `<button class="change-pin-btn" onclick="openChangePinModal()">變更密碼</button>` : ''}
+  `;
+}
+function renderFilterRow(){
+  const el = document.getElementById('filterRow');
+  if(!el) return;
+  el.innerHTML = `
+    <button class="filter-btn ${filterPaid==='all'?'active':''}" onclick="setFilterPaid('all')">全部</button>
+    <button class="filter-btn ${filterPaid==='unpaid'?'active':''}" onclick="setFilterPaid('unpaid')">未請款</button>
+    <button class="filter-btn ${filterPaid==='paid'?'active':''}" onclick="setFilterPaid('paid')">已請款</button>
+  `;
+}
+function renderEntriesOnly(filter){
+  filter = (filter||'').trim().toLowerCase();
+  const el = document.getElementById('entriesContainer');
+  if(!el) return;
+  const list = entries
+    .filter(e => !filter || (e.siteName+e.meterNo+e.workOrder+e.address).toLowerCase().includes(filter))
+    .filter(e => filterPaid==='all' || (filterPaid==='paid' ? !!e.paid : !e.paid))
+    .sort((a,b)=> b.createdAt - a.createdAt);
+
+  if(list.length===0){
+    el.innerHTML = `
+      <div class="empty">
+        <div class="big">🗂️</div>
+        ${entries.length===0 ? '尚無任何請款資料，點上方「新增請款」開始登錄。' : '找不到符合的資料。'}
+      </div>`;
+    return;
+  }
+  el.innerHTML = list.map(e => renderEntryCard(e)).join('');
+}
+
+function ensureListShell(){
+  const wrap = document.getElementById('viewList');
+  if(document.getElementById('entriesContainer')) return;
+  wrap.innerHTML = `
+    <div class="list-toolbar">
+      <input type="text" id="searchBox" placeholder="搜尋案場 / 電號 / 派工單號" oninput="renderEntriesOnly(this.value)">
+      <button class="btn-export" onclick="exportExcel()">Excel</button>
+    </div>
+    <div class="lock-row" id="lockRow"></div>
+    <div class="filter-row" id="filterRow"></div>
+    <div id="entriesContainer"></div>
+  `;
+}
+function renderList(filter){
+  ensureListShell();
+  renderLockRow();
+  renderFilterRow();
+  renderEntriesOnly(filter !== undefined ? filter : currentSearch());
+  if(filter){
+    const sb2 = document.getElementById('searchBox');
+    if(sb2) sb2.value = filter;
+  }
+}
+
+function renderTotals(){
+  const count = entries.length;
+  const doneCount = entries.filter(e=>e.status==='已完工').length;
+  const paidCount = entries.filter(e=>e.paid).length;
+  const unpaidSum = entries.reduce((s,e)=> e.paid ? s : s+(parseFloat(e.taxed)||parseFloat(e.untaxed)||0), 0);
+  document.getElementById('totalsBar').innerHTML = `
+    <div class="stat"><div class="num mono">${count}</div><div class="lbl">總筆數</div></div>
+    <div class="stat status-green"><div class="num mono">${doneCount}</div><div class="lbl">已完工</div></div>
+    <div class="stat status-red"><div class="num mono">${count-doneCount}</div><div class="lbl">施工中</div></div>
+    <div class="stat status-green"><div class="num mono">${paidCount}</div><div class="lbl">已請款</div></div>
+    <div class="stat status-red"><div class="num mono">${count-paidCount}</div><div class="lbl">未請款</div></div>
+    <div class="stat"><div class="num mono">${isUnlocked ? '$'+fmtMoney(unpaidSum) : '🔒'}</div><div class="lbl">待收金額</div></div>
+  `;
+}
+
+/* ---------------- Excel export ---------------- */
+function loadExcelJS(){
+  return new Promise((resolve, reject)=>{
+    if(window.ExcelJS){ resolve(); return; }
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js';
+    s.onload = () => resolve();
+    s.onerror = () => reject(new Error('load failed'));
+    document.head.appendChild(s);
+  });
+}
+function fmtCheckCell(obj){
+  if(!obj) return '';
+  let s = obj.ok || '';
+  if(obj.note) s += (s?' ':'') + '(' + obj.note + ')';
+  return s;
+}
+function fmtCTCell(ct){
+  if(!ct) return '';
+  const parts = [];
+  if(ct.ok) parts.push(ct.ok);
+  if(ct.lines) parts.push(ct.lines+'線');
+  if(ct.ratio) parts.push(ct.ratio+'倍率');
+  let s = parts.join(' ');
+  if(ct.note) s += (s?' ':'') + '(' + ct.note + ')';
+  return s;
+}
+async function exportExcel(){
+  if(!isUnlocked){
+    showToast('匯出內含金額資料，僅管理者可操作，請先解鎖');
+    openPinModal();
+    return;
+  }
+  if(entries.length===0){ showToast('目前沒有資料可匯出'); return; }
+  showToast('準備 Excel 中，請稍候...');
+  try{ await loadExcelJS(); }
+  catch(e){ showToast('Excel 元件載入失敗，請檢查網路連線'); return; }
+
+  const FONT = { name:'標楷體', size:11 };
+  const headers = ['項次','日期','案場狀態','請款狀態','派工單號/工名','台電電號','案場名稱','施工地址','項目',
+    '請款金額(未稅)','稅額','請款金額(含稅)',
+    '現場網路連接位置','三相電連接位置','三線CT','電表能不能開機',
+    '施工前照片數','施工中照片數','完工照片數','備註'];
+
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet('請款明細');
+  ws.addRow(headers);
+
+  const sorted = [...entries].sort((a,b)=>a.createdAt-b.createdAt);
+  const meterColIndex = headers.indexOf('台電電號') + 1;
+
+  sorted.forEach((e,i)=>{
+    const pc = photoCounts(e);
+    const c = e.checks || {};
+    ws.addRow([
+      i+1, e.date, e.status, e.paid ? '已請款' : '未請款', e.workOrder, padMeter(e.meterNo), e.siteName, e.address, e.item,
+      Number(e.untaxed)||0, Number(e.tax)||0, Number(e.taxed)||0,
+      fmtCheckCell(c.netLocation), fmtCheckCell(c.phaseLocation), fmtCTCell(c.ct), fmtCheckCell(c.meterPower),
+      pc.before, pc.during, pc.after,
+      e.note || ''
+    ]);
+  });
+
+  const widths = [6,11,9,9,16,15,16,24,8,12,10,12,20,20,20,18,8,8,8,26];
+  ws.columns.forEach((col,idx)=>{ col.width = widths[idx] || 12; });
+
+  ws.getColumn(meterColIndex).eachCell({includeEmpty:false}, (cell, rowNumber)=>{
+    if(rowNumber===1) return;
+    cell.value = { richText: [{ text: String(cell.value) }] };
+    cell.numFmt = '@';
+  });
+
+  ws.eachRow({includeEmpty:false}, (row)=>{
+    row.eachCell({includeEmpty:true}, (cell)=>{
+      cell.font = FONT;
+      cell.alignment = { vertical:'middle', horizontal:'center', wrapText:true };
+      cell.border = { top:{style:'thin'}, left:{style:'thin'}, bottom:{style:'thin'}, right:{style:'thin'} };
     });
-    const ws=XLSX.utils.aoa_to_sheet(rows);
-    ws['!cols']=[{wch:12},{wch:20},{wch:12},{wch:10},{wch:10},{wch:10},{wch:25},{wch:20}];
-    styleHeader(ws,rows[0].length);
-    XLSX.utils.book_append_sheet(wb,ws,'客戶訂單');
-  }
-  if(sheets.includes('workers')){
-    const rows=[['結算月份','工人姓名','安裝費','付款日期','工程說明']];
-    allData.workers.forEach(w=>rows.push([w.month||'',w.name||'',w.amount||0,w.paydate||'',w.note||'']));
-    const ws=XLSX.utils.aoa_to_sheet(rows);
-    ws['!cols']=[{wch:12},{wch:15},{wch:12},{wch:12},{wch:30}];
-    styleHeader(ws,rows[0].length);
-    XLSX.utils.book_append_sheet(wb,ws,'工人費用');
-  }
-  if(sheets.includes('materials')){
-    const rows=[['進貨日期','月份歸屬','金額','繳款狀態','備註']];
-    allData.materials.forEach(m=>rows.push([m.date||'',m.month||'',m.amount||0,m.status==='paid'?'已繳款':'未繳款',m.note||'']));
-    const ws=XLSX.utils.aoa_to_sheet(rows);
-    ws['!cols']=[{wch:12},{wch:10},{wch:12},{wch:10},{wch:30}];
-    styleHeader(ws,rows[0].length);
-    XLSX.utils.book_append_sheet(wb,ws,'材料貨款');
-  }
-  if(sheets.includes('salary')){
-    const rows=[['發放月份','薪資總額','備註'],
-      ['','固定明細',''],['陳建隆','73554',''],['陳敏篁','20000',''],['陳曉葳','20000',''],['劉育瑋＋劉昱伶','57485','領現金（製造金流）'],['','','']];
-    allData.salary.forEach(s=>rows.push([s.month||'',s.total||171039,s.note||'']));
-    const ws=XLSX.utils.aoa_to_sheet(rows);
-    ws['!cols']=[{wch:12},{wch:12},{wch:25}];
-    styleHeader(ws,rows[0].length);
-    XLSX.utils.book_append_sheet(wb,ws,'薪資發放');
-  }
-  if(sheets.includes('fixed')){
-    const rows=[['日期','項目','金額','備註']];
-    allData.fixed.forEach(f=>rows.push([f.date||'',fxNames[f.type]||f.type,f.amount||0,f.note||'']));
-    const ws=XLSX.utils.aoa_to_sheet(rows);
-    ws['!cols']=[{wch:12},{wch:18},{wch:12},{wch:25}];
-    styleHeader(ws,rows[0].length);
-    XLSX.utils.book_append_sheet(wb,ws,'固定支出');
-  }
-  if(sheets.includes('xiaoliu')){
-    const rows=[['月份','收款日期','實收金額','備註'],['','固定明細','',''],
-      ['','顧問費',20000,''],['','零用金',5000,''],['','勞健保勞退',18326,''],['','房租分擔',15000,''],['','每月合計',58326,''],['','','','']];
-    allData.xiaoliu.forEach(x=>rows.push([x.month||'',x.date||'',x.amount||0,x.note||'']));
-    const ws=XLSX.utils.aoa_to_sheet(rows);
-    ws['!cols']=[{wch:10},{wch:12},{wch:12},{wch:25}];
-    styleHeader(ws,rows[0].length);
-    XLSX.utils.book_append_sheet(wb,ws,'小劉月收');
-  }
-  if(sheets.includes('summary')){
-    const months=new Set();
-    [...allData.orders,...allData.workers,...allData.materials,...allData.salary,...allData.fixed,...allData.xiaoliu].forEach(r=>{
-      const mo=r.month||(r.date?r.date.substring(0,7):null);if(mo)months.add(mo);
-    });
-    const sorted=[...months].sort();
-    const rows=[['月份','客戶訂單收入','小劉月收','收入合計','薪資','工人費用','材料貨款','固定支出','支出合計','結餘']];
-    sorted.forEach(mon=>{
-      const oInc=allData.orders.filter(r=>(r.date||'').startsWith(mon)).reduce((a,b)=>a+(b.amount||0),0);
-      const xInc=allData.xiaoliu.filter(r=>r.month===mon).reduce((a,b)=>a+(b.amount||0),0);
-      const wExp=allData.workers.filter(r=>r.month===mon).reduce((a,b)=>a+(b.amount||0),0);
-      const mExp=allData.materials.filter(r=>r.month===mon||(r.date||'').startsWith(mon)).reduce((a,b)=>a+(b.amount||0),0);
-      const sExp=allData.salary.find(r=>r.month===mon)?171039:0;
-      const fExp=allData.fixed.filter(r=>(r.date||'').startsWith(mon)).reduce((a,b)=>a+(b.amount||0),0);
-      const ti=oInc+xInc,te=wExp+mExp+sExp+fExp;
-      rows.push([mon,oInc,xInc,ti,sExp,wExp,mExp,fExp,te,ti-te]);
-    });
-    const ws=XLSX.utils.aoa_to_sheet(rows);
-    ws['!cols']=[{wch:10},{wch:14},{wch:12},{wch:12},{wch:12},{wch:12},{wch:14},{wch:12},{wch:12},{wch:12}];
-    styleHeader(ws,rows[0].length);
-    XLSX.utils.book_append_sheet(wb,ws,'月收支摘要');
-  }
+  });
 
-  const fname='君宥會計_'+new Date().toISOString().substring(0,10)+'.xlsx';
-  XLSX.writeFile(wb,fname);
-  btn.disabled=false;btn.textContent='📥 下載 Excel';
-  closeModal();toast('✓ Excel 已下載：'+fname);
+  const headerRow = ws.getRow(1);
+  headerRow.font = { ...FONT, bold:true };
+  headerRow.eachCell(cell=>{ cell.fill = { type:'pattern', pattern:'solid', fgColor:{argb:'FFF3DDAF'} }; });
+  headerRow.height = 22;
+  ws.views = [{ state:'frozen', ySplit:1 }];
+
+  const buffer = await wb.xlsx.writeBuffer();
+  const blob = new Blob([buffer], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `工程請款明細_${todayStr()}.xlsx`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('Excel 已下載');
 }
 
-function styleHeader(ws,cols){
-  for(let c=0;c<cols;c++){
-    const addr=XLSX.utils.encode_cell({r:0,c});
-    if(!ws[addr])continue;
-    ws[addr].s={font:{bold:true},fill:{fgColor:{rgb:'EAF3DE'}},alignment:{horizontal:'center'}};
+/* ---------------- per-entry photo ZIP download ---------------- */
+function loadJSZip(){
+  return new Promise((resolve, reject)=>{
+    if(window.JSZip){ resolve(); return; }
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js';
+    s.onload = () => resolve();
+    s.onerror = () => reject(new Error('load failed'));
+    document.head.appendChild(s);
+  });
+}
+async function downloadEntryPhotos(id){
+  const e = entries.find(x=>x.id===id);
+  if(!e) return;
+  const photos = e.photos || {before:[],during:[],after:[]};
+  const totalCount = (photos.before||[]).length + (photos.during||[]).length + (photos.after||[]).length;
+  if(totalCount===0){ showToast('這個案場尚未上傳照片'); return; }
+
+  showToast('準備照片中，請稍候...');
+  try{ await loadJSZip(); }
+  catch(err){ showToast('下載元件載入失敗，請檢查網路連線'); return; }
+
+  const stageFolder = {before:'施工前照片', during:'施工中照片', after:'完工照片'};
+  const zip = new JSZip();
+  let fileCount = 0;
+  for(const stageKey of ['before','during','after']){
+    const arr = photos[stageKey] || [];
+    for(let idx=0; idx<arr.length; idx++){
+      try{
+        const res = await fetch(arr[idx].url);
+        const blob = await res.blob();
+        zip.file(`${stageFolder[stageKey]}/${idx+1}.jpg`, blob);
+        fileCount++;
+      }catch(err){ /* skip photo that failed to fetch */ }
+    }
   }
+  if(fileCount===0){ showToast('照片下載失敗，請檢查網路連線'); return; }
+
+  const safeName = (e.siteName || '案場').replace(/[\\/:*?"<>|]/g,'_');
+  const blob = await zip.generateAsync({type:'blob'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `${safeName}_${e.date||todayStr()}_照片.zip`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast(`已下載 ${fileCount} 張照片`);
 }
 
+/* ---------------- helpers ---------------- */
+function escHtml(s){ return String(s??'').replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+function escAttr(s){ return escHtml(s).replace(/"/g,'&quot;'); }
+
+/* ---------------- tabs ---------------- */
+function switchTab(tab){
+  document.getElementById('tabAdd').classList.toggle('active', tab==='add');
+  document.getElementById('tabList').classList.toggle('active', tab==='list');
+  document.getElementById('viewAdd').style.display = tab==='add' ? 'block' : 'none';
+  document.getElementById('viewList').style.display = tab==='list' ? 'block' : 'none';
+  if(tab==='list') renderList();
+}
+
+/* ---------------- init ---------------- */
 async function init(){
-  setSyncStatus('loading');
-  await Promise.all([loadOrders(),loadWorkers(),loadMaterials(),loadSalary(),loadFixed(),loadXiaoliu()]);
-  setSyncStatus('ok');
+  document.getElementById('viewAdd').innerHTML = '<div class="loading-msg">載入中...</div>';
+  try{
+    await loadEntries();
+    await loadAdminPin();
+  }catch(e){
+    showConnError('無法連線到資料庫，請檢查網路連線，或確認 Supabase 專案的資料表／權限設定是否正確。錯誤訊息：' + (e && e.message ? e.message : e));
+  }
+  renderAddView();
+  renderTotals();
+  renderList();
 }
 init();
 </script>
