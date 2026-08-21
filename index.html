@@ -134,8 +134,8 @@
   .empty{text-align:center;padding:48px 20px;color:var(--ink-soft);}
   .empty .big{font-size:34px;margin-bottom:6px;}
 
-  .entry{position:relative;background:var(--paper);border:1px solid var(--border);border-left:5px solid var(--red);border-radius:var(--radius);padding:16px 14px 14px;margin-bottom:16px;}
-  .entry.is-done{border-left-color:var(--green);}
+  .entry{position:relative;background:var(--paper);border:3px solid var(--red);border-radius:var(--radius);padding:16px 14px 14px;margin-bottom:16px;}
+  .entry.is-done{border-color:var(--green);}
   .entry::before{content:"";position:absolute;top:-1px;left:0;right:0;height:0;border-top:2.5px dashed var(--border);}
   .entry::after{content:"";position:absolute;top:-8px;left:50%;transform:translateX(-50%);width:26px;height:16px;background:radial-gradient(circle at 50% 100%, transparent 8px, var(--paper-dim) 8.5px);}
   .entry-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;}
@@ -242,20 +242,6 @@
   </div>
 </div>
 
-<div class="modal-overlay" id="pinModal">
-  <div class="modal-box" onclick="event.stopPropagation()">
-    <p id="pinModalTitle" style="font-weight:900;margin-bottom:2px;"></p>
-    <p id="pinModalDesc" style="font-size:12.5px;color:var(--ink-soft);"></p>
-    <input type="password" inputmode="numeric" id="pinInput" placeholder="請輸入密碼" style="margin-bottom:8px;">
-    <input type="password" inputmode="numeric" id="pinInput2" placeholder="再輸入一次確認" style="display:none;margin-bottom:8px;">
-    <p id="pinError" style="color:var(--red);font-size:12px;display:none;margin:0 0 8px;"></p>
-    <div class="modal-actions">
-      <button class="btn-ghost" style="flex:1;" onclick="closePinModal()">取消</button>
-      <button class="btn-primary" onclick="submitPinModal()">確認</button>
-    </div>
-  </div>
-</div>
-
 <script>
 /* ============== Supabase connection ==============
    The anon/publishable key below is DESIGNED to be public — Supabase's
@@ -272,7 +258,7 @@ let entries = [];
 let editingId = null;
 let expandedPhotoIds = {};
 let filterPaid = 'all';
-let isUnlocked = false;
+let isUnlocked = true;
 let adminPin = null;
 let pinModalMode = 'enter';
 
@@ -627,7 +613,7 @@ function renderPhotoGridInner(stageKey){
     `).join('')}
     <label class="photo-add">
       ＋<span>拍照/選圖</span>
-      <input type="file" accept="image/*" capture="environment" multiple onchange="handlePhotoUpload('${stageKey}', this)">
+      <input type="file" accept="image/*" multiple onchange="handlePhotoUpload('${stageKey}', this)">
     </label>
   `;
 }
@@ -1035,7 +1021,6 @@ function ensureListShell(){
       <input type="text" id="searchBox" placeholder="搜尋案場 / 電號 / 派工單號" oninput="renderEntriesOnly(this.value)">
       <button class="btn-export" onclick="exportExcel()">Excel</button>
     </div>
-    <div class="lock-row" id="lockRow"></div>
     <div class="filter-row" id="filterRow"></div>
     <div id="entriesContainer"></div>
   `;
@@ -1228,7 +1213,6 @@ async function init(){
   document.getElementById('viewAdd').innerHTML = '<div class="loading-msg">載入中...</div>';
   try{
     await loadEntries();
-    await loadAdminPin();
   }catch(e){
     showConnError('無法連線到資料庫，請檢查網路連線，或確認 Supabase 專案的資料表／權限設定是否正確。錯誤訊息：' + (e && e.message ? e.message : e));
   }
