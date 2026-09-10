@@ -5,7 +5,1636 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, <!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>小型工程請款登錄</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --blueprint-900:#0F2D4A;
+    --blueprint-700:#1B3B5F;
+    --blueprint-500:#2F5D8A;
+    --blueprint-line:#3E71A3;
+    --paper:#FBF9F4;
+    --paper-dim:#F1EDE3;
+    --ink:#1F2A33;
+    --ink-soft:#5B6672;
+    --amber:#E8A33D;
+    --amber-dark:#C6821F;
+    --green:#3E8E5A;
+    --green-bg:#E4F1E8;
+    --amber-bg:#FBF0DD;
+    --red:#B0392B;
+    --red-bg:#FAE6E2;
+    --border:#D8D1C0;
+    --radius:10px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{background:var(--paper-dim);font-family:'Noto Sans TC',sans-serif;color:var(--ink);min-height:100vh;padding-bottom:48px;}
+  .mono{font-family:'JetBrains Mono',monospace;}
+
+  header{
+    background:
+      repeating-linear-gradient(0deg, transparent 0 27px, var(--blueprint-line) 27px 28px),
+      repeating-linear-gradient(90deg, transparent 0 27px, var(--blueprint-line) 27px 28px),
+      linear-gradient(160deg, var(--blueprint-900), var(--blueprint-700));
+    background-size: 28px 28px, 28px 28px, 100% 100%;
+    background-blend-mode: overlay, overlay, normal;
+    color:#fff;padding:22px 18px 18px;border-bottom:4px solid var(--amber);position:relative;
+  }
+  header .eyebrow{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#BFD4E8;font-weight:500;margin-bottom:4px;}
+  header h1{margin:0;font-size:22px;font-weight:900;letter-spacing:.02em;}
+  header .sub{font-size:12px;color:#9FBBD6;margin-top:4px;font-family:'JetBrains Mono',monospace;}
+
+  .totals-bar{display:flex;gap:10px;margin:14px -4px 0;padding:0 4px;overflow-x:auto;}
+  .stat{flex:1 1 0;min-width:82px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.18);border-radius:var(--radius);padding:8px 10px;}
+  .stat.clickable{cursor:pointer;-webkit-tap-highlight-color:transparent;}
+  .stat.clickable:active{background:rgba(255,255,255,0.16);}
+  .stat.stat-active{background:rgba(232,163,61,0.28);border-color:var(--amber);}
+  .stat .num{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:15px;color:var(--amber);}
+  .stat.status-green .num{color:#7FD99A;}
+  .stat.status-red .num{color:#F2A69B;}
+  .stat .lbl{font-size:10.5px;color:#CBDCEC;margin-top:2px;}
+
+  .tabs{display:flex;gap:8px;padding:14px 16px 0;max-width:640px;margin:0 auto;}
+  .tab-btn{flex:1;padding:11px 8px;border-radius:999px;border:1.5px solid var(--border);background:var(--paper);color:var(--ink-soft);font-family:'Noto Sans TC',sans-serif;font-weight:700;font-size:13.5px;cursor:pointer;}
+  .tab-btn.active{background:var(--blueprint-700);border-color:var(--blueprint-700);color:#fff;}
+
+  main{max-width:640px;margin:0 auto;padding:14px 16px 0;}
+
+  .card{background:var(--paper);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:14px;box-shadow:0 1px 2px rgba(15,45,74,0.05);}
+  .card-title{font-weight:900;font-size:15px;margin:0 0 12px;display:flex;align-items:center;gap:8px;}
+  .card-title .tag{background:var(--amber);color:var(--blueprint-900);font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;padding:2px 7px;border-radius:5px;}
+  .card-subtitle{font-weight:700;font-size:12.5px;color:var(--blueprint-700);margin:0 0 10px;border-top:1px dashed var(--border);padding-top:12px;}
+
+  .field{margin-bottom:12px;}
+  .field label{display:block;font-size:12.5px;font-weight:700;color:var(--blueprint-700);margin-bottom:5px;}
+  .field .hint{font-weight:400;color:var(--ink-soft);font-size:11px;}
+  input[type=text], input[type=number], input[type=date], input[type=password], select, textarea{
+    width:100%;padding:11px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:15px;
+    font-family:'Noto Sans TC',sans-serif;background:#fff;color:var(--ink);
+  }
+  input[type=number], .num-input{font-family:'JetBrains Mono',monospace;}
+  textarea{resize:vertical;min-height:56px;font-family:'Noto Sans TC',sans-serif;}
+  input:focus, select:focus, textarea:focus{outline:2.5px solid var(--amber);outline-offset:0;border-color:var(--amber-dark);}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+
+  .amt-box{background:var(--paper-dim);border:1.5px dashed var(--blueprint-500);border-radius:8px;padding:10px 12px;}
+  .amt-box .row2{margin-top:8px;}
+  .amt-locked{background:var(--paper-dim);border:1.5px dashed var(--border);border-radius:8px;padding:16px 12px;text-align:center;}
+  .amt-locked .msg{font-size:13px;color:var(--ink-soft);margin-bottom:10px;}
+
+  .status-toggle{display:flex;gap:8px;}
+  .status-opt{flex:1;text-align:center;padding:11px 6px;border-radius:8px;border:1.5px solid var(--border);font-weight:700;font-size:13.5px;cursor:pointer;color:var(--ink-soft);background:#fff;}
+  .status-opt.sel-red{border-color:var(--red);background:var(--red-bg);color:var(--red);}
+  .status-opt.sel-green{border-color:var(--green);background:var(--green-bg);color:var(--green);}
+
+  .check-item{background:var(--paper-dim);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:10px;}
+  .check-item-head{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+  .ci-label{font-size:13px;font-weight:700;color:var(--ink);}
+  .ci-toggle{display:flex;gap:6px;flex-shrink:0;}
+  .ci-btn{width:38px;height:32px;border-radius:7px;border:1.5px solid var(--border);background:#fff;color:var(--ink-soft);font-weight:900;font-size:14px;}
+  .ci-btn.sel-green{border-color:var(--green);background:var(--green-bg);color:var(--green);}
+  .ci-btn.sel-red{border-color:var(--red);background:var(--red-bg);color:var(--red);}
+  .ci-note{margin-top:8px;font-size:13.5px;padding:8px 10px;}
+  .ci-row2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;}
+  .ci-row2 input{font-size:13.5px;padding:8px 10px;}
+  .worker-row{display:flex;gap:8px;align-items:center;margin-bottom:8px;}
+  .worker-row input:first-child{flex:1.3;}
+  .worker-row input:nth-child(2){flex:1;}
+  .worker-rm{flex:0 0 auto;width:32px;height:32px;border-radius:7px;border:1.5px solid #E7C6C0;background:var(--red-bg);color:var(--red);font-weight:900;font-size:14px;}
+  .worker-rm-spacer{flex:0 0 32px;}
+
+  .photo-stage{margin-bottom:14px;}
+  .photo-stage-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px;}
+  .photo-stage-head .lbl{font-size:12.5px;font-weight:700;color:var(--blueprint-700);display:flex;align-items:center;gap:6px;}
+  .photo-stage-head .dot{width:8px;height:8px;border-radius:50%;display:inline-block;}
+  .dot.before{background:#9AA7B2;}
+  .dot.during{background:var(--amber-dark);}
+  .dot.after{background:var(--green);}
+  .photo-grid{display:flex;flex-wrap:wrap;gap:8px;}
+  .photo-thumb{position:relative;width:72px;height:72px;border-radius:8px;overflow:hidden;border:1.5px solid var(--border);background:var(--paper-dim);}
+  .photo-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+  .photo-thumb .rm{position:absolute;top:2px;right:2px;width:19px;height:19px;background:rgba(15,45,74,0.85);color:#fff;border-radius:50%;font-size:12px;display:flex;align-items:center;justify-content:center;line-height:1;}
+  .photo-thumb.uploading::after{content:"⏳";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.6);font-size:20px;}
+  .photo-add{width:72px;height:72px;border-radius:8px;border:1.5px dashed var(--blueprint-500);background:var(--paper-dim);display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--blueprint-700);font-size:22px;cursor:pointer;position:relative;}
+  .photo-add span{font-size:9px;font-weight:700;margin-top:1px;}
+  .photo-add input{position:absolute;inset:0;opacity:0;cursor:pointer;}
+
+  .btn-row{display:flex;gap:10px;margin-top:16px;}
+  button{font-family:'Noto Sans TC',sans-serif;cursor:pointer;border:none;}
+  .btn-primary{flex:1;background:var(--amber);color:var(--blueprint-900);font-weight:900;font-size:15px;padding:13px;border-radius:8px;}
+  .btn-primary:active{background:var(--amber-dark);}
+  .btn-ghost{background:transparent;color:var(--ink-soft);font-weight:700;font-size:14px;padding:13px 16px;border-radius:8px;border:1.5px solid var(--border);}
+
+  .list-toolbar{display:flex;gap:8px;margin-bottom:10px;}
+  .btn-cal{flex:1;background:var(--paper);border:1.5px solid var(--blueprint-500);color:var(--blueprint-700);font-weight:700;font-size:13px;padding:11px 6px;border-radius:8px;}
+  .cal-panel{background:var(--paper);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-bottom:10px;}
+  .cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+  .cal-nav{background:var(--paper-dim);border:1px solid var(--border);border-radius:6px;width:32px;height:32px;font-size:16px;font-weight:700;color:var(--blueprint-700);}
+  .cal-title{font-weight:900;font-size:14px;color:var(--ink);font-family:'JetBrains Mono',monospace;}
+  .cal-weekdays{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;font-size:11px;color:var(--ink-soft);margin-bottom:4px;}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;}
+  .cal-cell{height:42px;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:7px;cursor:pointer;position:relative;box-sizing:border-box;}
+  .cal-cell.empty{cursor:default;}
+  .cal-cell:not(.empty):active{background:var(--paper-dim);}
+  .cal-cell.has-entry{background:#EAC077;}
+  .cal-cell.today .cal-daynum{color:var(--amber-dark);font-weight:900;}
+  .cal-cell.selected{background:var(--blueprint-700);}
+  .cal-cell.selected .cal-daynum{color:#fff;}
+  .cal-daynum{font-size:12.5px;font-family:'JetBrains Mono',monospace;}
+  .cal-badge{min-width:14px;height:14px;padding:0 3px;border-radius:999px;background:var(--blueprint-900);color:#fff;font-size:9px;font-weight:700;font-family:'JetBrains Mono',monospace;display:flex;align-items:center;justify-content:center;margin-top:2px;}
+  .cal-cell.selected .cal-badge{background:#fff;color:var(--blueprint-700);}
+  .cal-footer{margin-top:8px;font-size:11.5px;color:var(--ink-soft);text-align:center;}
+  .cal-clear{color:var(--red);font-weight:700;cursor:pointer;text-decoration:underline;}
+  .list-toolbar input{flex:1;}
+  .btn-export{background:var(--blueprint-700);color:#fff;font-weight:700;font-size:13px;padding:0 14px;border-radius:8px;white-space:nowrap;}
+
+  .lock-row{display:flex;gap:8px;margin-bottom:10px;}
+  .lock-btn{flex:1;background:var(--blueprint-900);color:#fff;font-weight:700;font-size:12.5px;padding:10px;border-radius:8px;}
+  .lock-btn.unlocked{background:var(--green);}
+  .change-pin-btn{flex:0 0 auto;background:transparent;border:1.5px solid var(--border);color:var(--ink-soft);font-weight:700;font-size:12px;padding:0 12px;border-radius:8px;}
+
+  .filter-row{display:flex;gap:6px;margin-bottom:12px;}
+  .filter-btn{flex:1;padding:8px 6px;border-radius:8px;border:1.5px solid var(--border);background:#fff;color:var(--ink-soft);font-weight:700;font-size:12.5px;}
+  .filter-btn.active{background:var(--blueprint-700);border-color:var(--blueprint-700);color:#fff;}
+
+  .empty{text-align:center;padding:48px 20px;color:var(--ink-soft);}
+  .empty .big{font-size:34px;margin-bottom:6px;}
+
+  .entry{position:relative;background:var(--paper);border:5px solid var(--red);border-radius:var(--radius);padding:16px 14px 14px;margin-bottom:16px;}
+  .entry.is-done{border-color:var(--green);}
+  .entry::before{content:"";position:absolute;top:-1px;left:0;right:0;height:0;border-top:2.5px dashed var(--border);}
+  .entry::after{content:"";position:absolute;top:-8px;left:50%;transform:translateX(-50%);width:26px;height:16px;background:radial-gradient(circle at 50% 100%, transparent 8px, var(--paper-dim) 8.5px);}
+  .entry-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;}
+  .entry-idx{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--blueprint-500);font-weight:700;}
+  .status-pill{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:999px;margin-left:6px;}
+  .status-pill.green{background:var(--green-bg);color:var(--green);}
+  .status-pill.red{background:var(--red-bg);color:var(--red);}
+  .entry-site{font-size:16px;font-weight:900;color:var(--ink);margin-top:2px;}
+  .entry-addr{font-size:12.5px;color:var(--ink-soft);margin-top:2px;}
+  .entry-amt{text-align:right;flex-shrink:0;}
+  .entry-amt .main{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:17px;color:var(--amber-dark);}
+  .entry-amt .sub{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink-soft);}
+  .entry-amt .sub.profit{color:var(--green);font-weight:700;margin-top:2px;}
+  .entry-amt .locked-tag{font-size:12.5px;color:var(--ink-soft);font-weight:700;}
+  .entry-meta{display:flex;flex-wrap:wrap;gap:6px 10px;margin-top:10px;font-size:12px;color:var(--ink-soft);font-family:'JetBrains Mono',monospace;}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;}
+  .chip{font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;}
+  .chip.item{background:var(--paper-dim);color:var(--blueprint-700);border:1px solid var(--border);}
+  .chip.ok{background:var(--green-bg);color:var(--green);}
+  .chip.warn{background:var(--amber-bg);color:var(--amber-dark);}
+  .chip.bad{background:var(--red-bg);color:var(--red);}
+
+  .pay-pill{margin-top:11px;width:100%;display:flex;align-items:center;justify-content:center;gap:6px;padding:10px;border-radius:8px;font-weight:900;font-size:13.5px;border:1.5px solid var(--border);}
+  .pay-pill.paid{background:var(--green-bg);border-color:var(--green);color:var(--green);}
+  .pay-pill.unpaid{background:var(--red-bg);border-color:var(--red);color:var(--red);}
+  .pay-pill.locked{opacity:0.72;}
+
+  .entry-note{margin-top:9px;font-size:12.5px;color:var(--ink);background:var(--paper-dim);border-radius:6px;padding:7px 9px;line-height:1.6;}
+  .entry-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px;border-top:1px solid var(--border);padding-top:10px;}
+  .icon-btn{background:transparent;border:1.5px solid var(--border);border-radius:7px;padding:8px;font-size:12.5px;font-weight:700;color:var(--ink-soft);}
+  .icon-btn.danger{color:var(--red);border-color:#E7C6C0;}
+  .icon-btn.edit{color:var(--blueprint-700);border-color:var(--blueprint-500);}
+  .icon-btn.photos{color:var(--amber-dark);border-color:var(--amber);}
+  .icon-btn.download{color:var(--green);border-color:var(--green);}
+
+  .photo-view{margin-top:12px;padding-top:10px;border-top:1px solid var(--border);}
+  .photo-view-stage{margin-bottom:10px;}
+  .photo-view-stage:last-child{margin-bottom:0;}
+  .photo-view-stage .lbl{font-size:11px;font-weight:700;color:var(--blueprint-700);margin-bottom:6px;display:flex;align-items:center;gap:5px;}
+  .photo-view-grid{display:flex;flex-wrap:wrap;gap:8px;}
+  .photo-view-grid img{width:64px;height:64px;object-fit:cover;border-radius:7px;border:1.5px solid var(--border);cursor:pointer;}
+  .photo-none{font-size:11.5px;color:var(--ink-soft);}
+
+  .loading-msg{text-align:center;padding:40px;color:var(--ink-soft);font-size:13px;}
+  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--blueprint-900);color:#fff;padding:10px 18px;border-radius:999px;font-size:13px;font-weight:500;opacity:0;pointer-events:none;transition:opacity .25s, transform .25s;z-index:50;white-space:nowrap;max-width:88vw;text-align:center;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(-4px);}
+
+  .lightbox{display:none;position:fixed;inset:0;background:rgba(15,45,74,0.92);z-index:80;align-items:center;justify-content:center;padding:24px;}
+  .lightbox.show{display:flex;}
+  .lightbox img{max-width:100%;max-height:100%;border-radius:8px;}
+  .lightbox .close{position:absolute;top:18px;right:18px;width:36px;height:36px;background:rgba(255,255,255,0.15);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;}
+
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(15,45,74,0.55);z-index:90;align-items:center;justify-content:center;padding:24px;}
+  .modal-overlay.show{display:flex;}
+  .modal-box{background:var(--paper);border-radius:var(--radius);padding:20px;max-width:340px;width:100%;box-shadow:0 8px 30px rgba(15,45,74,0.25);}
+  .modal-box p{font-size:14.5px;color:var(--ink);margin:0 0 12px;line-height:1.6;}
+  .modal-actions{display:flex;gap:10px;margin-top:4px;}
+
+  .conn-error{
+    max-width:640px;margin:14px auto 0;padding:0 16px;
+  }
+  .conn-error .box{
+    background:var(--red-bg);border:1.5px solid var(--red);border-radius:var(--radius);
+    padding:14px;font-size:13px;color:var(--red);line-height:1.6;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="eyebrow">小型工程 · 現場登錄</div>
+  <h1>工程請款登錄</h1>
+  <div class="sub">派工單 → 請款明細 · 團隊共用</div>
+  <div class="totals-bar" id="totalsBar"></div>
+</header>
+
+<div id="connError" class="conn-error" style="display:none;">
+  <div class="box" id="connErrorMsg"></div>
+</div>
+
+<div class="tabs">
+  <button class="tab-btn active" id="tabAdd" onclick="switchTab('add')">＋ 新增請款</button>
+  <button class="tab-btn" id="tabList" onclick="switchTab('list')">📋 請款列表</button>
+</div>
+
+<main>
+  <div id="viewAdd"></div>
+  <div id="viewList" style="display:none;"></div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+  <div class="close">✕</div>
+  <img id="lightboxImg" src="" onclick="event.stopPropagation()">
+</div>
+
+<div class="modal-overlay" id="confirmModal">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <p id="confirmMsg"></p>
+    <div class="modal-actions">
+      <button class="btn-ghost" style="flex:1;" onclick="closeConfirm(false)">取消</button>
+      <button class="btn-primary" style="background:var(--red);color:#fff;" onclick="closeConfirm(true)">確定刪除</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="exportSortModal">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <p style="font-weight:900;margin-bottom:12px;">選擇匯出排序方式</p>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <button class="btn-ghost" style="width:100%;justify-content:flex-start;" onclick="runExport('date_asc')">📅 施工日期：舊 → 新</button>
+      <button class="btn-ghost" style="width:100%;justify-content:flex-start;" onclick="runExport('date_desc')">📅 施工日期：新 → 舊</button>
+      <button class="btn-ghost" style="width:100%;justify-content:flex-start;" onclick="runExport('status')">🚧 案場狀態：已完工優先</button>
+      <button class="btn-ghost" style="width:100%;justify-content:flex-start;" onclick="runExport('paid')">💰 請款狀態：已請款優先</button>
+    </div>
+    <button class="btn-ghost" style="width:100%;margin-top:12px;" onclick="closeExportSortModal()">取消</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="photoDownloadModal">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <p style="font-weight:900;margin-bottom:12px;">選擇要下載的相簿範圍</p>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <button class="btn-ghost" style="width:100%;justify-content:flex-start;" onclick="runPhotoDownload('all')">📦 全部案場</button>
+      <button class="btn-ghost" style="width:100%;justify-content:flex-start;" onclick="runPhotoDownload('已完工')">🟢 已完工案場</button>
+      <button class="btn-ghost" style="width:100%;justify-content:flex-start;" onclick="runPhotoDownload('施工中')">🔴 施工中案場</button>
+    </div>
+    <button class="btn-ghost" style="width:100%;margin-top:12px;" onclick="closePhotoDownloadModal()">取消</button>
+  </div>
+</div>
+
+<script>
+/* ============== Supabase connection ==============
+   The anon/publishable key below is DESIGNED to be public — Supabase's
+   security model relies on Row Level Security policies (already set up),
+   not on hiding this key. */
+const SUPABASE_URL = 'https://nwjtbbnsepmdlpqxfpmt.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_0JGW8ek-R-Ww05A6cxXHxw_BYv8DSWG';
+const PHOTOS_BUCKET = 'photos';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const ENTRIES_KEY = 'billing-entries';
+const PIN_KEY = 'admin-pin';
+let entries = [];
+let editingId = null;
+let expandedPhotoIds = {};
+let filterPaid = 'all';
+let filterStatus = 'all';
+let isUnlocked = true;
+let adminPin = null;
+let pinModalMode = 'enter';
+
+function uid(){ return 'e' + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+function todayStr(){ return new Date().toISOString().slice(0,10); }
+function fmtMoney(n){ return (Number(n)||0).toLocaleString('zh-TW'); }
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(()=>t.classList.remove('show'), 1800);
+}
+function openLightbox(src){
+  document.getElementById('lightboxImg').src = src;
+  document.getElementById('lightbox').classList.add('show');
+}
+function closeLightbox(){ document.getElementById('lightbox').classList.remove('show'); }
+function showConnError(msg){
+  document.getElementById('connErrorMsg').textContent = msg;
+  document.getElementById('connError').style.display = 'block';
+}
+
+/* ---------------- custom confirm ---------------- */
+let _confirmResolve = null;
+function showConfirm(msg){
+  document.getElementById('confirmMsg').textContent = msg;
+  document.getElementById('confirmModal').classList.add('show');
+  return new Promise(resolve => { _confirmResolve = resolve; });
+}
+function closeConfirm(result){
+  document.getElementById('confirmModal').classList.remove('show');
+  if(_confirmResolve) _confirmResolve(result);
+  _confirmResolve = null;
+}
+
+/* ---------------- key/value store on Supabase (table: app_kv) ---------------- */
+async function kvGet(key){
+  const { data, error } = await sb.from('app_kv').select('value').eq('key', key).maybeSingle();
+  if(error) throw error;
+  return data ? data.value : null;
+}
+async function kvSet(key, value){
+  const { error } = await sb.from('app_kv').upsert({ key, value, updated_at: new Date().toISOString() });
+  if(error) throw error;
+}
+
+/* ---------------- PIN lock: gates payment-status toggling AND all price figures ---------------- */
+async function loadAdminPin(){
+  try{
+    const v = await kvGet(PIN_KEY);
+    adminPin = (typeof v === 'string') ? v : '';
+  }catch(e){ adminPin = ''; }
+  if(!adminPin){
+    adminPin = '0000';
+    try{ await kvSet(PIN_KEY, adminPin); }catch(e){}
+  }
+}
+function openPinModal(){
+  pinModalMode = adminPin ? 'enter' : 'set';
+  document.getElementById('pinInput').value = '';
+  document.getElementById('pinInput2').value = '';
+  document.getElementById('pinInput2').style.display = pinModalMode==='set' ? 'block' : 'none';
+  document.getElementById('pinError').style.display = 'none';
+  if(pinModalMode==='set'){
+    document.getElementById('pinModalTitle').textContent = '設定管理密碼';
+    document.getElementById('pinModalDesc').textContent = '設定後，之後只有輸入正確密碼才能查看金額及勾選請款狀態。';
+    document.getElementById('pinInput').placeholder = '設定密碼';
+  }else{
+    document.getElementById('pinModalTitle').textContent = '輸入管理密碼';
+    document.getElementById('pinModalDesc').textContent = '查看/填寫金額、勾選請款狀態為管理者專屬功能。';
+    document.getElementById('pinInput').placeholder = '請輸入密碼';
+  }
+  document.getElementById('pinModal').classList.add('show');
+  setTimeout(()=>document.getElementById('pinInput').focus(), 50);
+}
+function openChangePinModal(){
+  pinModalMode = 'change';
+  document.getElementById('pinInput').value = '';
+  document.getElementById('pinInput2').style.display = 'none';
+  document.getElementById('pinError').style.display = 'none';
+  document.getElementById('pinModalTitle').textContent = '變更管理密碼';
+  document.getElementById('pinModalDesc').textContent = '設定新的管理密碼給自己使用。';
+  document.getElementById('pinInput').placeholder = '新密碼';
+  document.getElementById('pinModal').classList.add('show');
+  setTimeout(()=>document.getElementById('pinInput').focus(), 50);
+}
+function closePinModal(){ document.getElementById('pinModal').classList.remove('show'); }
+function showPinError(msg){
+  const el = document.getElementById('pinError');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+function onUnlockedStateChanged(){
+  if(document.getElementById('entriesContainer')) renderEntriesOnly(currentSearch());
+  if(document.getElementById('tabAdd').classList.contains('active')) renderAddView();
+  renderTotals();
+}
+async function submitPinModal(){
+  const v1 = document.getElementById('pinInput').value;
+  if(pinModalMode === 'set'){
+    const v2 = document.getElementById('pinInput2').value;
+    if(!v1){ showPinError('請輸入密碼'); return; }
+    if(v1 !== v2){ showPinError('兩次輸入的密碼不一致'); return; }
+    adminPin = v1;
+    try{ await kvSet(PIN_KEY, adminPin); }catch(e){ showPinError('密碼儲存失敗，請檢查網路'); return; }
+    isUnlocked = true;
+    closePinModal();
+    onUnlockedStateChanged();
+    showToast('密碼已設定，目前已解鎖');
+  }else if(pinModalMode === 'change'){
+    if(!v1){ showPinError('請輸入新密碼'); return; }
+    adminPin = v1;
+    try{ await kvSet(PIN_KEY, adminPin); }catch(e){ showPinError('密碼儲存失敗，請檢查網路'); return; }
+    closePinModal();
+    showToast('管理密碼已更新');
+  }else{
+    if(v1 === adminPin){
+      isUnlocked = true;
+      closePinModal();
+      onUnlockedStateChanged();
+      showToast('已解鎖');
+    }else{
+      showPinError('密碼錯誤，請再試一次');
+    }
+  }
+}
+function toggleLock(){
+  if(isUnlocked){
+    isUnlocked = false;
+    onUnlockedStateChanged();
+    showToast('已重新鎖定');
+  }else{
+    openPinModal();
+  }
+}
+function currentSearch(){
+  const el = document.getElementById('searchBox');
+  return el ? el.value : '';
+}
+
+/* ---------------- meter number ---------------- */
+function padMeter(v){
+  const s = String(v==null ? '' : v).trim();
+  if(/^[0-9]+$/.test(s) && s.length > 0 && s.length < 11) return s.padStart(11,'0');
+  return s;
+}
+
+/* ---------------- entries storage ---------------- */
+async function loadEntries(){
+  const v = await kvGet(ENTRIES_KEY);
+  entries = Array.isArray(v) ? v : [];
+}
+async function saveEntries(){
+  await kvSet(ENTRIES_KEY, entries);
+}
+
+/* ---------------- photo upload (Supabase Storage) ---------------- */
+function compressImageToBlob(file){
+  return new Promise((resolve, reject)=>{
+    const reader = new FileReader();
+    reader.onerror = reject;
+    reader.onload = ()=>{
+      const img = new Image();
+      img.onerror = reject;
+      img.onload = ()=>{
+        const maxDim = 1100;
+        let w = img.width, h = img.height;
+        if(w > h && w > maxDim){ h = Math.round(h*maxDim/w); w = maxDim; }
+        else if(h > maxDim){ w = Math.round(w*maxDim/h); h = maxDim; }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img,0,0,w,h);
+        canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('compress failed')), 'image/jpeg', 0.62);
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+async function uploadOnePhoto(entryId, stage, file){
+  const blob = await compressImageToBlob(file);
+  const fileName = `${entryId}/${stage}/${Date.now()}_${Math.random().toString(36).slice(2,7)}.jpg`;
+  const { error } = await sb.storage.from(PHOTOS_BUCKET).upload(fileName, blob, { contentType:'image/jpeg', upsert:false });
+  if(error) throw error;
+  const { data } = sb.storage.from(PHOTOS_BUCKET).getPublicUrl(fileName);
+  return { path: fileName, url: data.publicUrl };
+}
+async function deleteStoredPhotos(paths){
+  if(!paths || paths.length===0) return;
+  try{ await sb.storage.from(PHOTOS_BUCKET).remove(paths); }catch(e){ /* non-fatal */ }
+}
+
+/* ---------------- form state ---------------- */
+function emptyChecks(){
+  return {
+    netLocation:{ok:'',note:''},
+    phaseLocation:{ok:'',note:''},
+    ct:{ok:'',lines:'',ratio:'',note:''},
+    meterPower:{ok:'',note:''}
+  };
+}
+const ITEM_PRESETS = ['維護','新設'];
+function emptyForm(){
+  return {
+    id: uid(), date: todayStr(), completionDate: '', workOrder:'', meterNo:'', siteName:'', owner:'', address:'',
+    item:'維護', itemCustomMode:false, itemCustomText:'',
+    materialCost:'', laborCost:'', untaxed:'', tax:'', taxed:'', note:'',
+    workers: [{name:'', pay:''}],
+    status:'施工中',
+    photos:{before:[],during:[],after:[]},
+    checks: emptyChecks()
+  };
+}
+function mergeChecks(base, override){
+  const out = {};
+  for(const k in base){ out[k] = {...base[k], ...((override && override[k]) ? override[k] : {})}; }
+  return out;
+}
+let form = emptyForm();
+
+function syncFormFromDOM(){
+  const g = id => document.getElementById(id);
+  if(g('f_date')) form.date = g('f_date').value;
+  if(g('f_completionDate')) form.completionDate = g('f_completionDate').value;
+  if(g('f_workOrder')) form.workOrder = g('f_workOrder').value;
+  if(g('f_meterNo')) form.meterNo = g('f_meterNo').value;
+  if(g('f_siteName')) form.siteName = g('f_siteName').value;
+  if(g('f_owner')) form.owner = g('f_owner').value;
+  if(g('f_address')) form.address = g('f_address').value;
+  if(g('f_itemCustom')) form.itemCustomText = g('f_itemCustom').value;
+  if(g('f_materialCost')) form.materialCost = g('f_materialCost').value;
+  if(g('f_laborCost')) form.laborCost = g('f_laborCost').value;
+  if(g('f_untaxed')) form.untaxed = g('f_untaxed').value;
+  if(g('f_tax')) form.tax = g('f_tax').value;
+  if(g('f_taxed')) form.taxed = g('f_taxed').value;
+  const workerEls = document.querySelectorAll('#workerSection .worker-row');
+  if(workerEls.length){
+    form.workers = Array.from(workerEls).map(row=>{
+      const inputs = row.querySelectorAll('input');
+      return { name: inputs[0] ? inputs[0].value : '', pay: inputs[1] ? inputs[1].value : '' };
+    });
+  }
+  if(g('f_note')) form.note = g('f_note').value;
+}
+
+function calcTotals(){
+  const mEl = document.getElementById('f_materialCost');
+  const lEl = document.getElementById('f_laborCost');
+  if(!mEl || !lEl) return;
+  form.materialCost = mEl.value;
+  form.laborCost = lEl.value;
+  const l = parseFloat(lEl.value)||0;
+  // 材料費是從安裝工資內扣的成本，不加進報價 — 未稅金額＝安裝工資
+  const untaxed = l;
+  form.untaxed = String(untaxed);
+  const tax = Math.round(untaxed*0.05);
+  form.tax = String(tax);
+  form.taxed = String(untaxed+tax);
+  const uEl = document.getElementById('f_untaxed'); if(uEl) uEl.value = untaxed;
+  const tEl = document.getElementById('f_tax'); if(tEl) tEl.value = tax;
+  const tdEl = document.getElementById('f_taxed'); if(tdEl) tdEl.value = untaxed+tax;
+}
+
+function calcTax(){
+  const uEl = document.getElementById('f_untaxed');
+  if(!uEl) return;
+  form.untaxed = uEl.value;
+  const u = parseFloat(uEl.value);
+  if(!isNaN(u)){
+    const tax = Math.round(u*0.05);
+    form.tax = String(tax);
+    form.taxed = String(u+tax);
+    document.getElementById('f_tax').value = tax;
+    document.getElementById('f_taxed').value = u + tax;
+  }
+}
+
+function setStatus(s){ form.status = s; renderStatusToggle(); }
+function renderStatusToggle(){
+  const el = document.getElementById('statusToggle');
+  if(!el) return;
+  el.innerHTML = `
+    <div class="status-opt ${form.status==='施工中'?'sel-red':''}" onclick="setStatus('施工中')">🔴 施工中</div>
+    <div class="status-opt ${form.status==='已完工'?'sel-green':''}" onclick="setStatus('已完工')">🟢 已完工</div>
+  `;
+}
+
+/* ---------------- 項目：維護／新設／自行輸入 ---------------- */
+function onItemSelectChange(v){
+  if(v==='__custom__'){ form.itemCustomMode = true; }
+  else{ form.itemCustomMode = false; form.item = v; }
+  const el = document.getElementById('itemFieldExtra');
+  if(el) el.innerHTML = renderItemCustomInput();
+  if(form.itemCustomMode){
+    setTimeout(()=>{ const inp = document.getElementById('f_itemCustom'); if(inp) inp.focus(); }, 30);
+  }
+}
+function renderItemCustomInput(){
+  if(!form.itemCustomMode) return '';
+  return `<input type="text" id="f_itemCustom" placeholder="請輸入項目名稱" value="${escAttr(form.itemCustomText)}" oninput="form.itemCustomText=this.value" style="margin-top:8px;">`;
+}
+function renderItemField(){
+  return `
+    <div class="field">
+      <label>項目</label>
+      <select id="f_item" onchange="onItemSelectChange(this.value)">
+        <option value="維護" ${(!form.itemCustomMode && form.item==='維護')?'selected':''}>維護</option>
+        <option value="新設" ${(!form.itemCustomMode && form.item==='新設')?'selected':''}>新設</option>
+        <option value="__custom__" ${form.itemCustomMode?'selected':''}>其他（自行輸入）</option>
+      </select>
+      <div id="itemFieldExtra">${renderItemCustomInput()}</div>
+    </div>
+  `;
+}
+
+/* ---------------- check items ---------------- */
+function setCheck(key, field, val){
+  form.checks[key][field] = val;
+  if(field==='ok') updateCheckToggleUI(key);
+}
+function updateCheckToggleUI(key){
+  const el = document.getElementById('checktoggle_'+key);
+  if(!el) return;
+  const c = form.checks[key];
+  el.querySelectorAll('.ci-btn').forEach(btn=>btn.classList.remove('sel-green','sel-red'));
+  const oBtn = el.querySelector('[data-v="O"]');
+  const xBtn = el.querySelector('[data-v="X"]');
+  if(c.ok==='O' && oBtn) oBtn.classList.add('sel-green');
+  if(c.ok==='X' && xBtn) xBtn.classList.add('sel-red');
+}
+function renderCheckToggle(key){
+  const c = form.checks[key];
+  return `
+    <div class="ci-toggle" id="checktoggle_${key}">
+      <button type="button" class="ci-btn ${c.ok==='O'?'sel-green':''}" data-v="O" onclick="setCheck('${key}','ok','O')">O</button>
+      <button type="button" class="ci-btn ${c.ok==='X'?'sel-red':''}" data-v="X" onclick="setCheck('${key}','ok','X')">X</button>
+    </div>
+  `;
+}
+function renderSimpleCheck(key, label, placeholder){
+  const c = form.checks[key];
+  return `
+    <div class="check-item">
+      <div class="check-item-head">
+        <span class="ci-label">${label}</span>
+        ${renderCheckToggle(key)}
+      </div>
+      <input type="text" class="ci-note" placeholder="${placeholder}" value="${escAttr(c.note)}" oninput="form.checks.${key}.note=this.value">
+    </div>
+  `;
+}
+function renderCTCheck(){
+  const c = form.checks.ct;
+  return `
+    <div class="check-item">
+      <div class="check-item-head">
+        <span class="ci-label">三線CT</span>
+        ${renderCheckToggle('ct')}
+      </div>
+      <div class="ci-row2">
+        <input type="text" inputmode="numeric" placeholder="線數，例：3" value="${escAttr(c.lines)}" oninput="form.checks.ct.lines=this.value">
+        <input type="text" inputmode="numeric" placeholder="倍率，例：100" value="${escAttr(c.ratio)}" oninput="form.checks.ct.ratio=this.value">
+      </div>
+      <input type="text" class="ci-note" placeholder="例：單向/三相" value="${escAttr(c.note)}" oninput="form.checks.ct.note=this.value">
+    </div>
+  `;
+}
+
+/* ---------------- photo stages ---------------- */
+const STAGES = [{key:'before',label:'施工前照片',dot:'before'},{key:'during',label:'施工中照片',dot:'during'},{key:'after',label:'完工照片',dot:'after'}];
+
+function renderPhotoGridInner(stageKey){
+  const items = form.photos[stageKey] || [];
+  return `
+    ${items.map((p,i)=>`
+      <div class="photo-thumb">
+        <img src="${p.url}" onclick="openLightbox('${p.url}')">
+        <div class="rm" onclick="removePhoto('${stageKey}',${i})">✕</div>
+      </div>
+    `).join('')}
+    <label class="photo-add">
+      ＋<span>拍照/選圖</span>
+      <input type="file" accept="image/*" multiple onchange="handlePhotoUpload('${stageKey}', this)">
+    </label>
+  `;
+}
+function updatePhotoStageDOM(stageKey){
+  const grid = document.getElementById('grid_'+stageKey);
+  if(grid) grid.innerHTML = renderPhotoGridInner(stageKey);
+  const countEl = document.getElementById('count_'+stageKey);
+  if(countEl) countEl.textContent = (form.photos[stageKey]||[]).length;
+}
+function renderPhotoStages(){
+  return STAGES.map(s => `
+    <div class="photo-stage">
+      <div class="photo-stage-head">
+        <span class="lbl"><span class="dot ${s.dot}"></span>${s.label}<span class="hint" id="count_${s.key}">（${(form.photos[s.key]||[]).length}）</span></span>
+      </div>
+      <div class="photo-grid" id="grid_${s.key}">${renderPhotoGridInner(s.key)}</div>
+    </div>
+  `).join('');
+}
+async function handlePhotoUpload(stage, input){
+  const files = Array.from(input.files || []);
+  input.value = '';
+  if(files.length === 0) return;
+  let done = 0;
+  showToast(`上傳中... (0/${files.length})`);
+  for(const f of files){
+    try{
+      const photo = await uploadOnePhoto(form.id, stage, f);
+      form.photos[stage].push(photo);
+      done++;
+      updatePhotoStageDOM(stage);
+      showToast(`上傳中... (${done}/${files.length})`);
+    }catch(err){
+      showToast('照片上傳失敗，請檢查網路連線');
+    }
+  }
+  if(stage === 'after' && form.photos.after.length > 0){
+    form.status = '已完工';
+    renderStatusToggle();
+  }
+  if(done > 0) showToast(`已上傳 ${done} 張照片`);
+}
+async function removePhoto(stage, idx){
+  const photo = form.photos[stage][idx];
+  form.photos[stage].splice(idx,1);
+  updatePhotoStageDOM(stage);
+  if(photo && photo.path) await deleteStoredPhotos([photo.path]);
+}
+
+/* ---------------- main add/edit form ---------------- */
+function renderAmountSection(){
+  if(!isUnlocked){
+    return `
+      <div class="amt-locked">
+        <div class="msg">🔒 金額欄位僅管理者可填寫</div>
+        <button class="btn-ghost" style="width:100%;" onclick="openPinModal()">輸入密碼解鎖</button>
+      </div>
+    `;
+  }
+  return `
+    <div class="amt-box">
+      <div class="row2">
+        <div class="field" style="margin-bottom:0;">
+          <label>材料費</label>
+          <input type="number" inputmode="decimal" id="f_materialCost" class="num-input" placeholder="0" value="${form.materialCost}" oninput="calcTotals()">
+        </div>
+        <div class="field" style="margin-bottom:0;">
+          <label>安裝工資</label>
+          <input type="number" inputmode="decimal" id="f_laborCost" class="num-input" placeholder="0" value="${form.laborCost}" oninput="calcTotals()">
+        </div>
+      </div>
+      <div class="field" style="margin-top:10px;margin-bottom:0;">
+        <label>請款金額（未稅）<span class="hint">＝安裝工資，材料費為內扣成本不列入報價，可手動調整</span></label>
+        <input type="number" inputmode="decimal" id="f_untaxed" class="num-input" placeholder="0" value="${form.untaxed}" oninput="calcTax()">
+      </div>
+      <div class="row2">
+        <div class="field" style="margin-bottom:0;">
+          <label>稅額</label>
+          <input type="number" inputmode="decimal" id="f_tax" class="num-input" placeholder="0" value="${form.tax}" oninput="form.tax=this.value">
+        </div>
+        <div class="field" style="margin-bottom:0;">
+          <label>請款金額（含稅）</label>
+          <input type="number" inputmode="decimal" id="f_taxed" class="num-input" placeholder="0" value="${form.taxed}" oninput="form.taxed=this.value">
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function addWorkerRow(){
+  form.workers.push({name:'', pay:''});
+  const el = document.getElementById('workerSection');
+  if(el) el.innerHTML = renderWorkerRows();
+}
+function removeWorkerRow(idx){
+  form.workers.splice(idx,1);
+  if(form.workers.length===0) form.workers.push({name:'', pay:''});
+  const el = document.getElementById('workerSection');
+  if(el) el.innerHTML = renderWorkerRows();
+}
+function renderWorkerRows(){
+  return form.workers.map((w,idx)=>`
+    <div class="worker-row">
+      <input type="text" placeholder="師傅姓名" value="${escAttr(w.name)}" oninput="form.workers[${idx}].name=this.value">
+      <input type="number" inputmode="decimal" class="num-input" placeholder="工資" value="${w.pay}" oninput="form.workers[${idx}].pay=this.value">
+      ${form.workers.length>1 ? `<button type="button" class="worker-rm" onclick="removeWorkerRow(${idx})">✕</button>` : '<span class="worker-rm-spacer"></span>'}
+    </div>
+  `).join('') + `<button type="button" class="btn-ghost" style="width:100%;margin-top:2px;" onclick="addWorkerRow()">＋ 新增師傅</button>`;
+}
+function renderWorkerSection(){
+  return `
+    <div class="field">
+      <label>派工人員與工資<span class="hint">這場派誰去、各給多少錢，可加多名師傅</span></label>
+      <div id="workerSection">${renderWorkerRows()}</div>
+    </div>
+  `;
+}
+
+function renderAddView(){
+  const isEdit = editingId !== null;
+  const el = document.getElementById('viewAdd');
+  el.innerHTML = `
+    <div class="card">
+      <p class="card-title"><span class="tag">${isEdit ? 'EDIT' : 'NEW'}</span>${isEdit ? '編輯請款資料' : '新增一筆請款'}</p>
+
+      <div class="field">
+        <label>案場狀態</label>
+        <div class="status-toggle" id="statusToggle"></div>
+      </div>
+
+      <div class="row2">
+        <div class="field">
+          <label>施工日期</label>
+          <input type="date" id="f_date" value="${form.date}" oninput="form.date=this.value">
+        </div>
+        <div class="field">
+          <label>完工日期<span class="hint">選填</span></label>
+          <input type="date" id="f_completionDate" value="${form.completionDate}" oninput="form.completionDate=this.value">
+        </div>
+      </div>
+
+      <div class="row2">
+        <div class="field">
+          <label>派工單號 / 工名</label>
+          <input type="text" id="f_workOrder" class="mono" placeholder="XOA12025..." value="${escAttr(form.workOrder)}" oninput="form.workOrder=this.value">
+        </div>
+        <div class="field">
+          <label>台電電號<span class="hint">會自動補齊為 11 碼</span></label>
+          <input type="text" inputmode="numeric" id="f_meterNo" class="mono" placeholder="00567322103" value="${escAttr(form.meterNo)}" oninput="form.meterNo=this.value">
+        </div>
+      </div>
+
+      <div class="row2">
+        <div class="field">
+          <label>案場名稱</label>
+          <input type="text" id="f_siteName" placeholder="例：泰晶殿" value="${escAttr(form.siteName)}" oninput="form.siteName=this.value">
+        </div>
+        <div class="field">
+          <label>業主<span class="hint">選填</span></label>
+          <input type="text" id="f_owner" placeholder="例：王先生" value="${escAttr(form.owner)}" oninput="form.owner=this.value">
+        </div>
+      </div>
+
+      <div class="field">
+        <label>施工地址</label>
+        <input type="text" id="f_address" placeholder="台中市...路...號" value="${escAttr(form.address)}" oninput="form.address=this.value">
+      </div>
+
+      ${renderItemField()}
+
+      <div id="amtSection">${renderAmountSection()}</div>
+
+      <p class="card-subtitle">派工資訊</p>
+      ${renderWorkerSection()}
+
+      <p class="card-subtitle">現場確認</p>
+
+      ${renderSimpleCheck('netLocation', '現場網路連接位置', '例：分享器在櫃台後方/連接今時路由器')}
+      ${renderSimpleCheck('phaseLocation', '三相電連接位置', '例：空的斷路器/休息區冷氣斷路器')}
+      ${renderCTCheck()}
+      ${renderSimpleCheck('meterPower', '電表能不能開機', '例：N相110V/220V才能開機')}
+
+      <div class="field">
+        <label>備註<span class="hint">選填</span></label>
+        <textarea id="f_note" placeholder="例：客戶wifi後改客戶端有問題" oninput="form.note=this.value">${escHtml(form.note)}</textarea>
+      </div>
+
+      <div class="field" style="margin-bottom:4px;">
+        <label>現場照片</label>
+      </div>
+      ${renderPhotoStages()}
+
+      <div class="btn-row">
+        <button class="btn-primary" onclick="submitForm()">${isEdit ? '儲存修改' : '新增這筆'}</button>
+        ${isEdit ? '<button class="btn-ghost" onclick="cancelEdit()">取消</button>' : ''}
+      </div>
+    </div>
+  `;
+  renderStatusToggle();
+}
+
+async function submitForm(){
+  syncFormFromDOM();
+  if(!form.siteName || !form.siteName.trim()){
+    showToast('請至少填寫案場名稱');
+    return;
+  }
+  form.meterNo = padMeter(form.meterNo);
+  const finalItem = form.itemCustomMode ? ((form.itemCustomText||'').trim() || '其他') : form.item;
+  const data = {
+    id: form.id,
+    date: form.date || todayStr(),
+    completionDate: form.completionDate || '',
+    workOrder: form.workOrder.trim(),
+    meterNo: form.meterNo,
+    siteName: form.siteName.trim(),
+    owner: form.owner.trim(),
+    address: form.address.trim(),
+    item: finalItem,
+    note: form.note.trim(),
+    status: form.status,
+    checks: JSON.parse(JSON.stringify(form.checks)),
+    photos: JSON.parse(JSON.stringify(form.photos)),
+  };
+  if(isUnlocked){
+    data.materialCost = form.materialCost;
+    data.laborCost = form.laborCost;
+    data.untaxed = form.untaxed;
+    data.tax = form.tax;
+    data.taxed = form.taxed;
+    data.workers = form.workers
+      .map(w => ({ name: (w.name||'').trim(), pay: w.pay }))
+      .filter(w => w.name || w.pay);
+  }
+  if(editingId){
+    const idx = entries.findIndex(e=>e.id===editingId);
+    if(idx>-1) entries[idx] = {...entries[idx], ...data};
+    showToast('已儲存修改');
+    editingId = null;
+  }else{
+    entries.push({createdAt: Date.now(), paid:false, materialCost:'', laborCost:'', untaxed:'', tax:'', taxed:'', workers:[], ...data});
+    showToast('已新增一筆請款');
+  }
+  await saveEntries();
+  form = emptyForm();
+  renderAddView();
+  renderTotals();
+  renderList();
+  switchTab('list');
+}
+
+function cancelEdit(){
+  editingId = null;
+  form = emptyForm();
+  renderAddView();
+}
+
+async function editEntry(id){
+  const e = entries.find(x=>x.id===id);
+  if(!e) return;
+  editingId = id;
+  const base = emptyForm();
+  const isPreset = ITEM_PRESETS.includes(e.item);
+  let workers = Array.isArray(e.workers) && e.workers.length ? e.workers.map(w=>({...w})) : [];
+  if(workers.length===0 && e.workerName) workers = [{ name: e.workerName, pay: e.workerPay || '' }];
+  if(workers.length===0) workers = [{name:'', pay:''}];
+  form = {
+    ...base, ...e,
+    id: e.id,
+    item: isPreset ? e.item : '維護',
+    itemCustomMode: !isPreset,
+    itemCustomText: isPreset ? '' : (e.item || ''),
+    workers,
+    photos: {
+      before:[...((e.photos&&e.photos.before)||[])],
+      during:[...((e.photos&&e.photos.during)||[])],
+      after:[...((e.photos&&e.photos.after)||[])],
+    },
+    checks: mergeChecks(base.checks, e.checks)
+  };
+  switchTab('add');
+  renderAddView();
+}
+
+async function deleteEntry(id){
+  const ok = await showConfirm('確定要刪除這筆請款資料嗎？照片也會一併刪除，此動作無法復原。');
+  if(!ok) return;
+  const e = entries.find(x=>x.id===id);
+  entries = entries.filter(x=>x.id!==id);
+  await saveEntries();
+  if(e && e.photos){
+    const paths = [];
+    ['before','during','after'].forEach(k=>(e.photos[k]||[]).forEach(p=>{ if(p && p.path) paths.push(p.path); }));
+    await deleteStoredPhotos(paths);
+  }
+  delete expandedPhotoIds[id];
+  renderTotals();
+  renderList(currentSearch());
+  showToast('已刪除');
+}
+
+function togglePhotoView(id){
+  expandedPhotoIds[id] = !expandedPhotoIds[id];
+  renderEntriesOnly(currentSearch());
+}
+
+async function togglePaid(id){
+  if(!isUnlocked){
+    showToast('請款狀態為管理者專屬功能，請先解鎖');
+    openPinModal();
+    return;
+  }
+  const idx = entries.findIndex(e=>e.id===id);
+  if(idx<0) return;
+  entries[idx].paid = !entries[idx].paid;
+  await saveEntries();
+  renderTotals();
+  renderEntriesOnly(currentSearch());
+  showToast(entries[idx].paid ? '已標記為「已請款」' : '已標記為「未請款」');
+}
+
+function setFilterStatus(v){
+  filterStatus = (filterStatus === v) ? 'all' : v;
+  afterFilterChange();
+}
+function setFilterPaidToggle(v){
+  filterPaid = (filterPaid === v) ? 'all' : v;
+  afterFilterChange();
+}
+function resetFilters(){
+  filterStatus = 'all';
+  filterPaid = 'all';
+  afterFilterChange();
+}
+function afterFilterChange(){
+  renderTotals();
+  const calPanel = document.getElementById('calendarPanel');
+  if(calPanel && calPanel.style.display !== 'none') renderCalendar();
+  if(document.getElementById('tabList').classList.contains('active') && document.getElementById('entriesContainer')){
+    renderEntriesOnly(currentSearch());
+  }else{
+    switchTab('list');
+  }
+}
+
+/* ---------------- list view ---------------- */
+function chipClass(v){
+  if(v==='O') return 'ok';
+  if(v==='X') return 'bad';
+  return 'item';
+}
+function photoCounts(e){
+  const p = e.photos || {before:[],during:[],after:[]};
+  return { before:(p.before||[]).length, during:(p.during||[]).length, after:(p.after||[]).length };
+}
+function workersSummary(e){
+  let workers = Array.isArray(e.workers) ? e.workers : [];
+  if(workers.length===0 && e.workerName) workers = [{name:e.workerName, pay:e.workerPay||''}];
+  const names = workers.map(w=>w.name).filter(Boolean).join('、');
+  const totalPay = workers.reduce((s,w)=>s+(Number(w.pay)||0),0);
+  return { names, totalPay, workers };
+}
+function calcProfit(e){
+  const untaxed = Number(e.untaxed) || 0;
+  const material = Number(e.materialCost) || 0;
+  const workerPay = workersSummary(e).totalPay;
+  return untaxed - material - workerPay;
+}
+function renderPhotoView(e){
+  if(!expandedPhotoIds[e.id]) return '';
+  const photos = e.photos || {before:[],during:[],after:[]};
+  return `
+    <div class="photo-view">
+      ${STAGES.map(s=>`
+        <div class="photo-view-stage">
+          <div class="lbl"><span class="dot ${s.dot}"></span>${s.label}（${(photos[s.key]||[]).length}）</div>
+          ${(photos[s.key]||[]).length ? `
+            <div class="photo-view-grid">
+              ${photos[s.key].map(p=>`<img src="${p.url}" onclick="openLightbox('${p.url}')">`).join('')}
+            </div>
+          ` : `<div class="photo-none">尚未上傳</div>`}
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+function ctChipText(c){
+  if(!c || !c.ct) return '三線CT -';
+  const ct = c.ct;
+  const parts = [];
+  if(ct.lines) parts.push(ct.lines+'線');
+  if(ct.ratio) parts.push(ct.ratio+'倍率');
+  const detail = parts.length ? ' '+parts.join('/') : '';
+  return `三線CT ${ct.ok || '-'}${detail}`;
+}
+function checkNoteLines(c){
+  if(!c) return [];
+  const lines = [];
+  if(c.netLocation && c.netLocation.note) lines.push('網路：'+c.netLocation.note);
+  if(c.phaseLocation && c.phaseLocation.note) lines.push('三相電：'+c.phaseLocation.note);
+  if(c.ct && c.ct.note) lines.push('三線CT：'+c.ct.note);
+  if(c.meterPower && c.meterPower.note) lines.push('開機：'+c.meterPower.note);
+  return lines;
+}
+
+function renderEntryCard(e){
+  const done = e.status === '已完工';
+  const paid = !!e.paid;
+  const pc = photoCounts(e);
+  const totalPhotos = pc.before + pc.during + pc.after;
+  const c = e.checks || {};
+  const noteLines = checkNoteLines(c);
+  const meterDisplay = padMeter(e.meterNo);
+  const ws = workersSummary(e);
+  const profit = calcProfit(e);
+  const idxNum = entries.length - entries.findIndex(x=>x.id===e.id);
+  return `
+    <div class="entry ${done?'is-done':''}">
+      <div class="entry-head">
+        <div>
+          <div class="entry-idx">#${idxNum} · 施工 ${e.date||''}${e.completionDate?` · 完工 ${e.completionDate}`:''}
+            <span class="status-pill ${done?'green':'red'}">${done?'🟢 已完工':'🔴 施工中'}</span>
+          </div>
+          <div class="entry-site">${escHtml(e.siteName||'（未命名案場）')}</div>
+          ${e.owner ? `<div class="entry-addr">業主：${escHtml(e.owner)}</div>` : ''}
+          ${e.address ? `<div class="entry-addr">${escHtml(e.address)}</div>` : ''}
+        </div>
+        <div class="entry-amt">
+          ${isUnlocked
+            ? `<div class="main">$${fmtMoney(e.taxed || e.untaxed)}</div><div class="sub">未稅（安裝工資）$${fmtMoney(e.untaxed)}</div>${e.materialCost?`<div class="sub">材料成本 $${fmtMoney(e.materialCost)}（內扣）</div>`:''}<div class="sub profit">毛利 $${fmtMoney(profit)}</div>`
+            : `<div class="locked-tag">🔒 金額</div>`
+          }
+        </div>
+      </div>
+      <div class="entry-meta">
+        ${e.workOrder ? `<span>單號 ${escHtml(e.workOrder)}</span>` : ''}
+        ${meterDisplay ? `<span>電號 ${escHtml(meterDisplay)}</span>` : ''}
+        ${ws.names ? `<span>派工 ${escHtml(ws.names)}</span>` : ''}
+        ${(isUnlocked && ws.totalPay) ? `<span>支付 $${fmtMoney(ws.totalPay)}</span>` : ''}
+      </div>
+      <div class="chips">
+        <span class="chip item">${escHtml(e.item||'—')}</span>
+        <span class="chip ${chipClass(c.netLocation&&c.netLocation.ok)}">網路 ${escHtml((c.netLocation&&c.netLocation.ok)||'-')}</span>
+        <span class="chip ${chipClass(c.phaseLocation&&c.phaseLocation.ok)}">三相電 ${escHtml((c.phaseLocation&&c.phaseLocation.ok)||'-')}</span>
+        <span class="chip ${chipClass(c.ct&&c.ct.ok)}">${escHtml(ctChipText(c))}</span>
+        <span class="chip ${chipClass(c.meterPower&&c.meterPower.ok)}">開機 ${escHtml((c.meterPower&&c.meterPower.ok)||'-')}</span>
+      </div>
+      ${e.note ? `<div class="entry-note">${escHtml(e.note)}</div>` : ''}
+      ${noteLines.length ? `<div class="entry-note">${noteLines.map(l=>escHtml(l)).join('<br>')}</div>` : ''}
+      <button class="pay-pill ${paid?'paid':'unpaid'} ${isUnlocked?'':'locked'}" onclick="togglePaid('${e.id}')">
+        ${paid ? '✅ 已請款' : '⬜ 未請款'}${isUnlocked?'':' 🔒'}
+      </button>
+      <div class="entry-actions">
+        <button class="icon-btn photos" onclick="togglePhotoView('${e.id}')">📷 照片 ${totalPhotos ? '('+totalPhotos+')' : ''} ${expandedPhotoIds[e.id]?'▲':'▼'}</button>
+        <button class="icon-btn download" onclick="downloadEntryPhotos('${e.id}')">📥 下載照片${totalPhotos ? ' ('+totalPhotos+')' : ''}</button>
+        <button class="icon-btn edit" onclick="editEntry('${e.id}')">✏️ 編輯</button>
+        <button class="icon-btn danger" onclick="deleteEntry('${e.id}')">🗑️ 刪除</button>
+      </div>
+      ${renderPhotoView(e)}
+    </div>
+  `;
+}
+
+let calendarMonth = new Date();
+let selectedDate = '';
+
+function entryDateCounts(){
+  const counts = {};
+  entries
+    .filter(e => filterStatus==='all' || e.status===filterStatus)
+    .filter(e => filterPaid==='all' || (filterPaid==='paid' ? !!e.paid : !e.paid))
+    .forEach(e => {
+      if(!e.date) return;
+      counts[e.date] = (counts[e.date] || 0) + 1;
+    });
+  return counts;
+}
+function updateCalToggleLabel(){
+  const btn = document.getElementById('calToggleBtn');
+  if(!btn) return;
+  btn.textContent = selectedDate ? `📅 ${selectedDate}（點擊更改）` : '📅 依日期篩選';
+}
+function toggleCalendarPanel(){
+  const panel = document.getElementById('calendarPanel');
+  if(!panel) return;
+  const showing = panel.style.display !== 'none';
+  panel.style.display = showing ? 'none' : 'block';
+  if(!showing) renderCalendar();
+}
+function shiftCalendarMonth(delta){
+  calendarMonth = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth()+delta, 1);
+  renderCalendar();
+}
+function pickCalendarDate(dateStr){
+  selectedDate = (selectedDate === dateStr) ? '' : dateStr;
+  updateCalToggleLabel();
+  renderCalendar();
+  renderEntriesOnly(currentSearch());
+}
+function clearCalendarDate(){
+  selectedDate = '';
+  updateCalToggleLabel();
+  renderCalendar();
+  renderEntriesOnly(currentSearch());
+}
+function renderCalendar(){
+  const panel = document.getElementById('calendarPanel');
+  if(!panel) return;
+  const y = calendarMonth.getFullYear();
+  const m = calendarMonth.getMonth();
+  const startWeekday = new Date(y, m, 1).getDay();
+  const daysInMonth = new Date(y, m+1, 0).getDate();
+  const dateCounts = entryDateCounts();
+  const todayIso = todayStr();
+
+  let cells = '';
+  for(let i=0;i<startWeekday;i++){ cells += `<div class="cal-cell empty"></div>`; }
+  for(let d=1; d<=daysInMonth; d++){
+    const dateStr = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const count = dateCounts[dateStr] || 0;
+    const isSelected = selectedDate === dateStr;
+    const isToday = dateStr === todayIso;
+    cells += `
+      <div class="cal-cell ${count>0?'has-entry':''} ${isSelected?'selected':''} ${isToday?'today':''}" onclick="pickCalendarDate('${dateStr}')">
+        <span class="cal-daynum">${d}</span>
+        ${count>0 ? `<span class="cal-badge">${count}</span>` : ''}
+      </div>`;
+  }
+  const otherFilterActive = filterStatus!=='all' || filterPaid!=='all';
+  const otherFilterLabel = [filterStatus!=='all'?filterStatus:'', filterPaid==='paid'?'已請款':(filterPaid==='unpaid'?'未請款':'')].filter(Boolean).join('、');
+  panel.innerHTML = `
+    <div class="cal-header">
+      <button class="cal-nav" onclick="shiftCalendarMonth(-1)">‹</button>
+      <div class="cal-title">${y} 年 ${m+1} 月</div>
+      <button class="cal-nav" onclick="shiftCalendarMonth(1)">›</button>
+    </div>
+    <div class="cal-weekdays"><div>日</div><div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div>六</div></div>
+    <div class="cal-grid">${cells}</div>
+    ${otherFilterActive ? `<div class="cal-footer" style="color:var(--amber-dark);">⚠️ 目前同時套用「${otherFilterLabel}」篩選，數字只計符合的案場</div>` : ''}
+    ${selectedDate
+      ? `<div class="cal-footer">已篩選 <b>${selectedDate}</b>，<span class="cal-clear" onclick="clearCalendarDate()">清除</span></div>`
+      : `<div class="cal-footer">底色數字＝當天案場數。點日期篩選，不選就顯示全部。</div>`
+    }
+  `;
+}
+
+function renderEntriesOnly(filter){
+  filter = (filter||'').trim().toLowerCase();
+  const el = document.getElementById('entriesContainer');
+  if(!el) return;
+  const list = entries
+    .filter(e => !filter || (e.siteName+e.meterNo+e.workOrder+e.address).toLowerCase().includes(filter))
+    .filter(e => !selectedDate || e.date === selectedDate)
+    .filter(e => filterStatus==='all' || e.status===filterStatus)
+    .filter(e => filterPaid==='all' || (filterPaid==='paid' ? !!e.paid : !e.paid))
+    .sort((a,b)=> b.createdAt - a.createdAt);
+
+  if(list.length===0){
+    el.innerHTML = `
+      <div class="empty">
+        <div class="big">🗂️</div>
+        ${entries.length===0 ? '尚無任何請款資料，點上方「新增請款」開始登錄。' : '找不到符合的資料。'}
+      </div>`;
+    return;
+  }
+  el.innerHTML = list.map(e => renderEntryCard(e)).join('');
+}
+
+function ensureListShell(){
+  const wrap = document.getElementById('viewList');
+  if(document.getElementById('entriesContainer')) return;
+  wrap.innerHTML = `
+    <div class="list-toolbar">
+      <input type="text" id="searchBox" placeholder="搜尋案場名稱 / 電號 / 地址 / 派工單號" oninput="renderEntriesOnly(this.value)">
+      <button class="btn-export" onclick="openExportSortModal()">Excel</button>
+    </div>
+    <div class="list-toolbar">
+      <button class="btn-cal" id="calToggleBtn" onclick="toggleCalendarPanel()">📅 依日期篩選</button>
+      <button class="btn-cal" onclick="openPhotoDownloadModal()">📦 下載相簿</button>
+    </div>
+    <div id="calendarPanel" class="cal-panel" style="display:none;"></div>
+    <div id="entriesContainer"></div>
+  `;
+}
+function renderList(filter){
+  ensureListShell();
+  renderEntriesOnly(filter !== undefined ? filter : currentSearch());
+  const calPanel = document.getElementById('calendarPanel');
+  if(calPanel && calPanel.style.display !== 'none') renderCalendar();
+  if(filter){
+    const sb2 = document.getElementById('searchBox');
+    if(sb2) sb2.value = filter;
+  }
+}
+
+function renderTotals(){
+  const count = entries.length;
+  const doneCount = entries.filter(e=>e.status==='已完工').length;
+  const paidCount = entries.filter(e=>e.paid).length;
+  const unpaidSum = entries.reduce((s,e)=> e.paid ? s : s+(parseFloat(e.taxed)||parseFloat(e.untaxed)||0), 0);
+  const isAllActive = filterStatus==='all' && filterPaid==='all';
+  document.getElementById('totalsBar').innerHTML = `
+    <div class="stat clickable ${isAllActive?'stat-active':''}" onclick="resetFilters()"><div class="num mono">${count}</div><div class="lbl">總筆數</div></div>
+    <div class="stat status-green clickable ${filterStatus==='已完工'?'stat-active':''}" onclick="setFilterStatus('已完工')"><div class="num mono">${doneCount}</div><div class="lbl">已完工</div></div>
+    <div class="stat status-red clickable ${filterStatus==='施工中'?'stat-active':''}" onclick="setFilterStatus('施工中')"><div class="num mono">${count-doneCount}</div><div class="lbl">施工中</div></div>
+    <div class="stat status-green clickable ${filterPaid==='paid'?'stat-active':''}" onclick="setFilterPaidToggle('paid')"><div class="num mono">${paidCount}</div><div class="lbl">已請款</div></div>
+    <div class="stat status-red clickable ${filterPaid==='unpaid'?'stat-active':''}" onclick="setFilterPaidToggle('unpaid')"><div class="num mono">${count-paidCount}</div><div class="lbl">未請款</div></div>
+    <div class="stat clickable ${filterPaid==='unpaid'?'stat-active':''}" onclick="setFilterPaidToggle('unpaid')"><div class="num mono">${isUnlocked ? '$'+fmtMoney(unpaidSum) : '🔒'}</div><div class="lbl">待收金額</div></div>
+  `;
+}
+
+/* ---------------- Excel export ---------------- */
+function loadExcelJS(){
+  return new Promise((resolve, reject)=>{
+    if(window.ExcelJS){ resolve(); return; }
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js';
+    s.onload = () => resolve();
+    s.onerror = () => reject(new Error('load failed'));
+    document.head.appendChild(s);
+  });
+}
+function fmtCheckCell(obj){
+  if(!obj) return '';
+  let s = obj.ok || '';
+  if(obj.note) s += (s?' ':'') + '(' + obj.note + ')';
+  return s;
+}
+function fmtCTCell(ct){
+  if(!ct) return '';
+  const parts = [];
+  if(ct.ok) parts.push(ct.ok);
+  if(ct.lines) parts.push(ct.lines+'線');
+  if(ct.ratio) parts.push(ct.ratio+'倍率');
+  let s = parts.join(' ');
+  if(ct.note) s += (s?' ':'') + '(' + ct.note + ')';
+  return s;
+}
+function sortEntriesForExport(mode){
+  const arr = [...entries];
+  const byDateAsc = (a,b) => (a.date||'').localeCompare(b.date||'') || a.createdAt-b.createdAt;
+  const byDateDesc = (a,b) => (b.date||'').localeCompare(a.date||'') || b.createdAt-a.createdAt;
+  if(mode === 'date_desc') return arr.sort(byDateDesc);
+  if(mode === 'status') return arr.sort((a,b)=>{
+    const r = (a.status==='已完工'?0:1) - (b.status==='已完工'?0:1);
+    return r!==0 ? r : byDateAsc(a,b);
+  });
+  if(mode === 'paid') return arr.sort((a,b)=>{
+    const r = (a.paid?0:1) - (b.paid?0:1);
+    return r!==0 ? r : byDateAsc(a,b);
+  });
+  return arr.sort(byDateAsc);
+}
+function styleSheet(ws, FONT, headerFillArgb, totalRowNumber){
+  ws.eachRow({includeEmpty:false}, (row)=>{
+    row.eachCell({includeEmpty:true}, (cell)=>{
+      cell.font = FONT;
+      cell.alignment = { vertical:'middle', horizontal:'center', wrapText:true };
+      cell.border = { top:{style:'thin'}, left:{style:'thin'}, bottom:{style:'thin'}, right:{style:'thin'} };
+    });
+  });
+  const headerRow = ws.getRow(1);
+  headerRow.font = { ...FONT, bold:true };
+  headerRow.eachCell(cell=>{ cell.fill = { type:'pattern', pattern:'solid', fgColor:{argb:headerFillArgb} }; });
+  headerRow.height = 22;
+  if(totalRowNumber){
+    const totalRow = ws.getRow(totalRowNumber);
+    totalRow.font = { ...FONT, bold:true };
+    totalRow.eachCell(cell=>{ cell.fill = { type:'pattern', pattern:'solid', fgColor:{argb:'FFE0DCCF'} }; });
+  }
+  ws.views = [{ state:'frozen', ySplit:1 }];
+}
+
+function openExportSortModal(){
+  if(entries.length===0){ showToast('目前沒有資料可匯出'); return; }
+  document.getElementById('exportSortModal').classList.add('show');
+}
+function closeExportSortModal(){ document.getElementById('exportSortModal').classList.remove('show'); }
+async function runExport(mode){
+  closeExportSortModal();
+  await exportExcel(mode);
+}
+
+async function exportExcel(sortMode){
+  sortMode = sortMode || 'date_asc';
+  if(entries.length===0){ showToast('目前沒有資料可匯出'); return; }
+  showToast('準備 Excel 中，請稍候...');
+  try{ await loadExcelJS(); }
+  catch(e){ showToast('Excel 元件載入失敗，請檢查網路連線'); return; }
+
+  const FONT = { name:'標楷體', size:11 };
+  const GREEN_FILL = { type:'pattern', pattern:'solid', fgColor:{argb:'FFE4F1E8'} };
+  const RED_FILL = { type:'pattern', pattern:'solid', fgColor:{argb:'FFFAE6E2'} };
+  const sorted = sortEntriesForExport(sortMode);
+
+  const wb = new ExcelJS.Workbook();
+
+  /* ---------- Sheet 1: 工程進度 ---------- */
+  const headers1 = ['項次','施工日期','完工日期','案場狀態','派工單號/工名','台電電號','案場名稱','業主','施工地址','項目','派工人員',
+    '現場網路連接位置','三相電連接位置','三線CT','電表能不能開機',
+    '施工前照片數','施工中照片數','完工照片數','備註'];
+  const ws1 = wb.addWorksheet('工程進度');
+  ws1.addRow(headers1);
+  const STATUS_COL = headers1.indexOf('案場狀態') + 1;
+  const OX_COLS = ['現場網路連接位置','三相電連接位置','三線CT','電表能不能開機'].map(h => headers1.indexOf(h) + 1);
+  const meterColIndex1 = headers1.indexOf('台電電號') + 1;
+
+  sorted.forEach((e,i)=>{
+    const pc = photoCounts(e);
+    const c = e.checks || {};
+    const wsum = workersSummary(e);
+    const row = ws1.addRow([
+      i+1, e.date, e.completionDate || '', e.status, e.workOrder, padMeter(e.meterNo), e.siteName, e.owner || '', e.address, e.item, wsum.names || '',
+      fmtCheckCell(c.netLocation), fmtCheckCell(c.phaseLocation), fmtCTCell(c.ct), fmtCheckCell(c.meterPower),
+      pc.before, pc.during, pc.after,
+      e.note || ''
+    ]);
+    row.getCell(STATUS_COL).fill = (e.status === '已完工') ? GREEN_FILL : RED_FILL;
+    OX_COLS.forEach(colIdx => {
+      const cell = row.getCell(colIdx);
+      const v = String(cell.value || '').trim();
+      if(v.startsWith('O')) cell.fill = GREEN_FILL;
+      else if(v.startsWith('X')) cell.fill = RED_FILL;
+    });
+  });
+  const widths1 = [6,11,11,9,16,15,16,12,24,8,12,20,20,20,18,8,8,8,26];
+  ws1.columns.forEach((col,idx)=>{ col.width = widths1[idx] || 12; });
+  ws1.getColumn(meterColIndex1).eachCell({includeEmpty:false}, (cell, rowNumber)=>{
+    if(rowNumber===1) return;
+    cell.value = { richText: [{ text: String(cell.value) }] };
+    cell.numFmt = '@';
+  });
+  styleSheet(ws1, FONT, 'FFF3DDAF', null);
+
+  /* ---------- Sheet 2: 會計 ---------- */
+  const headers2 = ['項次','施工日期','完工日期','案場名稱','業主','請款狀態','材料費','安裝工資','請款金額(未稅)','稅額','請款金額(含稅)','支付工資','派工人員','毛利','毛利率','備註'];
+  const ws2 = wb.addWorksheet('會計');
+  ws2.addRow(headers2);
+  const PAID_COL = headers2.indexOf('請款狀態') + 1;
+  const MATERIAL_COL = headers2.indexOf('材料費') + 1;
+  const LABOR_COL = headers2.indexOf('安裝工資') + 1;
+  const UNTAXED_COL = headers2.indexOf('請款金額(未稅)') + 1;
+  const TAX_COL = headers2.indexOf('稅額') + 1;
+  const TAXED_COL = headers2.indexOf('請款金額(含稅)') + 1;
+  const WORKERPAY_COL = headers2.indexOf('支付工資') + 1;
+  const PROFIT_COL = headers2.indexOf('毛利') + 1;
+  const MARGIN_COL = headers2.indexOf('毛利率') + 1;
+
+  sorted.forEach((e,i)=>{
+    const wsum = workersSummary(e);
+    const profit = calcProfit(e);
+    const untaxedVal = Number(e.untaxed)||0;
+    const margin = untaxedVal > 0 ? (profit/untaxedVal) : 0;
+    const row = ws2.addRow([
+      i+1, e.date, e.completionDate || '', e.siteName, e.owner || '', e.paid ? '已請款' : '未請款',
+      Number(e.materialCost)||0, Number(e.laborCost)||0,
+      untaxedVal, Number(e.tax)||0, Number(e.taxed)||0,
+      wsum.totalPay, wsum.names || '', profit, margin,
+      e.note || ''
+    ]);
+    row.getCell(PAID_COL).fill = e.paid ? GREEN_FILL : RED_FILL;
+    row.getCell(PROFIT_COL).fill = profit >= 0 ? GREEN_FILL : RED_FILL;
+    row.getCell(MARGIN_COL).fill = profit >= 0 ? GREEN_FILL : RED_FILL;
+    row.getCell(MARGIN_COL).numFmt = '0.0%';
+  });
+
+  const totalMaterial = sorted.reduce((s,e)=>s+(Number(e.materialCost)||0),0);
+  const totalLabor = sorted.reduce((s,e)=>s+(Number(e.laborCost)||0),0);
+  const totalUntaxed = sorted.reduce((s,e)=>s+(Number(e.untaxed)||0),0);
+  const totalTax = sorted.reduce((s,e)=>s+(Number(e.tax)||0),0);
+  const totalTaxed = sorted.reduce((s,e)=>s+(Number(e.taxed)||0),0);
+  const totalWorkerPay = sorted.reduce((s,e)=>s+workersSummary(e).totalPay,0);
+  const totalProfit = sorted.reduce((s,e)=>s+calcProfit(e),0);
+  const totalMargin = totalUntaxed > 0 ? (totalProfit/totalUntaxed) : 0;
+  const totalRowValues2 = new Array(headers2.length).fill('');
+  totalRowValues2[0] = '合計';
+  totalRowValues2[MATERIAL_COL-1] = totalMaterial;
+  totalRowValues2[LABOR_COL-1] = totalLabor;
+  totalRowValues2[UNTAXED_COL-1] = totalUntaxed;
+  totalRowValues2[TAX_COL-1] = totalTax;
+  totalRowValues2[TAXED_COL-1] = totalTaxed;
+  totalRowValues2[WORKERPAY_COL-1] = totalWorkerPay;
+  totalRowValues2[PROFIT_COL-1] = totalProfit;
+  totalRowValues2[MARGIN_COL-1] = totalMargin;
+  const totalRow2 = ws2.addRow(totalRowValues2);
+  ws2.mergeCells(totalRow2.number, 1, totalRow2.number, 6);
+  totalRow2.getCell(MARGIN_COL).numFmt = '0.0%';
+
+  const widths2 = [6,11,11,16,12,9,12,12,12,10,12,12,14,12,10,26];
+  ws2.columns.forEach((col,idx)=>{ col.width = widths2[idx] || 12; });
+  styleSheet(ws2, FONT, 'FFF3DDAF', totalRow2.number);
+
+  const buffer = await wb.xlsx.writeBuffer();
+  const blob = new Blob([buffer], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `工程請款明細_${todayStr()}.xlsx`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('Excel 已下載（工程進度 + 會計 兩個工作表）');
+}
+
+/* ---------------- per-entry photo ZIP download ---------------- */
+function loadJSZip(){
+  return new Promise((resolve, reject)=>{
+    if(window.JSZip){ resolve(); return; }
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js';
+    s.onload = () => resolve();
+    s.onerror = () => reject(new Error('load failed'));
+    document.head.appendChild(s);
+  });
+}
+async function downloadEntryPhotos(id){
+  const e = entries.find(x=>x.id===id);
+  if(!e) return;
+  const photos = e.photos || {before:[],during:[],after:[]};
+  const totalCount = (photos.before||[]).length + (photos.during||[]).length + (photos.after||[]).length;
+  if(totalCount===0){ showToast('這個案場尚未上傳照片'); return; }
+
+  showToast('準備照片中，請稍候...');
+  try{ await loadJSZip(); }
+  catch(err){ showToast('下載元件載入失敗，請檢查網路連線'); return; }
+
+  const stageFolder = {before:'施工前照片', during:'施工中照片', after:'完工照片'};
+  const zip = new JSZip();
+  let fileCount = 0;
+  for(const stageKey of ['before','during','after']){
+    const arr = photos[stageKey] || [];
+    for(let idx=0; idx<arr.length; idx++){
+      try{
+        const res = await fetch(arr[idx].url);
+        const blob = await res.blob();
+        zip.file(`${stageFolder[stageKey]}/${idx+1}.jpg`, blob);
+        fileCount++;
+      }catch(err){ /* skip photo that failed to fetch */ }
+    }
+  }
+  if(fileCount===0){ showToast('照片下載失敗，請檢查網路連線'); return; }
+
+  const safeName = (e.siteName || '案場').replace(/[\\/:*?"<>|]/g,'_');
+  const blob = await zip.generateAsync({type:'blob'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `${safeName}_${e.date||todayStr()}_照片.zip`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast(`已下載 ${fileCount} 張照片`);
+}
+
+/* ---------------- bulk photo download (全部 / 已完工 / 施工中) ---------------- */
+function openPhotoDownloadModal(){
+  if(entries.length===0){ showToast('目前沒有資料'); return; }
+  document.getElementById('photoDownloadModal').classList.add('show');
+}
+function closePhotoDownloadModal(){ document.getElementById('photoDownloadModal').classList.remove('show'); }
+async function runPhotoDownload(statusFilter){
+  closePhotoDownloadModal();
+  await downloadPhotosBulk(statusFilter);
+}
+async function downloadPhotosBulk(statusFilter){
+  const targets = entries.filter(e => statusFilter==='all' || e.status===statusFilter);
+  const totalPhotoCount = targets.reduce((s,e)=>{ const pc = photoCounts(e); return s+pc.before+pc.during+pc.after; }, 0);
+  if(targets.length===0){ showToast('這個範圍內沒有案場'); return; }
+  if(totalPhotoCount===0){ showToast('這個範圍內沒有照片可下載'); return; }
+
+  showToast(`準備照片中，共 ${targets.length} 個案場，請稍候...`);
+  try{ await loadJSZip(); }
+  catch(err){ showToast('下載元件載入失敗，請檢查網路連線'); return; }
+
+  const stageFolder = {before:'施工前照片', during:'施工中照片', after:'完工照片'};
+  const zip = new JSZip();
+  let fileCount = 0;
+  for(const e of targets){
+    const photos = e.photos || {before:[],during:[],after:[]};
+    const safeName = (e.siteName || '案場').replace(/[\\/:*?"<>|]/g,'_');
+    const siteFolder = `${safeName}_${e.date||''}`;
+    for(const stageKey of ['before','during','after']){
+      const arr = photos[stageKey] || [];
+      for(let idx=0; idx<arr.length; idx++){
+        try{
+          const res = await fetch(arr[idx].url);
+          const blob = await res.blob();
+          zip.file(`${siteFolder}/${stageFolder[stageKey]}/${idx+1}.jpg`, blob);
+          fileCount++;
+        }catch(err){ /* skip photo that failed to fetch */ }
+      }
+    }
+  }
+  if(fileCount===0){ showToast('照片下載失敗，請檢查網路連線'); return; }
+
+  const labelMap = { all:'全部案場', '已完工':'已完工案場', '施工中':'施工中案場' };
+  const blob = await zip.generateAsync({type:'blob'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `工程照片_${labelMap[statusFilter]||'全部'}_${todayStr()}.zip`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast(`已下載 ${fileCount} 張照片（共 ${targets.length} 個案場）`);
+}
+
+/* ---------------- helpers ---------------- */
+function escHtml(s){ return String(s??'').replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+function escAttr(s){ return escHtml(s).replace(/"/g,'&quot;'); }
+
+/* ---------------- tabs ---------------- */
+function switchTab(tab){
+  document.getElementById('tabAdd').classList.toggle('active', tab==='add');
+  document.getElementById('tabList').classList.toggle('active', tab==='list');
+  document.getElementById('viewAdd').style.display = tab==='add' ? 'block' : 'none';
+  document.getElementById('viewList').style.display = tab==='list' ? 'block' : 'none';
+  if(tab==='list') renderList();
+}
+
+/* ---------------- init ---------------- */
+async function init(){
+  document.getElementById('viewAdd').innerHTML = '<div class="loading-msg">載入中...</div>';
+  try{
+    await loadEntries();
+  }catch(e){
+    showConnError('無法連線到資料庫，請檢查網路連線，或確認 Supabase 專案的資料表／權限設定是否正確。錯誤訊息：' + (e && e.message ? e.message : e));
+  }
+  renderAddView();
+  renderTotals();
+  renderList();
+}
+init();
+</script>
+</body>
+</html>
+initial-scale=1.0, maximum-scale=1">
 <title>小型工程請款登錄</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
